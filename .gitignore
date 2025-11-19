@@ -1,0 +1,110 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+!terraform.tfvars.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+*.tfplan
+*.tfplan.*
+
+# Terraform backend
+*.tfbackend
+*.tfbackend.*
+
+# Terraform modules (external)
+.terraform/modules/
+
+# Node.js / NPM
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+.pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+Thumbs.db
+.DS_Store
+*.bak
+*.tmp
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Application specific
+app/logs/
+app/*.log
+
+# Terraform generated files
+terraform.tfstate.d/
+.terraform.tfstate.lock.info
+
+# Secrets and credentials
+secrets/
+*.pem
+*.key
+*.p12
+*.p8
+credentials.json
+secrets.json
+
+# Terraform template files (if they contain sensitive data)
+*.tpl.bak
+*.yaml.bak
+*.yml.bak
+
+# AWS CLI
+.aws/
+aws-cli/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Coverage reports
+coverage/
+*.lcov
+.nyc_output/
+
+# Build outputs
+dist/
+build/
+*.zip
+
+# Collector generated files
+collector.yaml
+*.yaml.local
+
+# ADOT generated files
+adot-config.yaml
+*.config.yaml
