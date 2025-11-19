@@ -1,0 +1,5 @@
+environment  = "o11y"
+project_name = "observability-core"
+owner        = "DevOps Team"
+application  = "observability-core"
+region       = "us-east-1"
