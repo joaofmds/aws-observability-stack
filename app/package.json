@@ -1,0 +1,16 @@
+{
+  "name": "poc-logs-backend",
+  "version": "1.0.0",
+  "description": "Simple Node.js backend that generates many logs (POC)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node app.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "pino": "^8.14.0"
+  }
+}
