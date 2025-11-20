@@ -7,6 +7,14 @@ resource "aws_security_group" "alb" {
   description = "Security group for ${local.alb_name} Application Load Balancer"
   vpc_id      = var.vpc_id
 
+  lifecycle {
+    create_before_destroy = true
+    # Ignorar mudanças de VPC se o Security Group já existe em outra VPC
+    ignore_changes = [
+      vpc_id
+    ]
+  }
+
   ingress {
     description = "HTTP from internet"
     from_port   = 80
@@ -40,6 +48,14 @@ resource "aws_security_group" "alb" {
 }
 
 # ------------------------------------------------------------------------------
+# Data Source: Get VPC ID from existing ALB (if ALB already exists)
+# ------------------------------------------------------------------------------
+data "aws_lb" "existing" {
+  count = var.create_alb ? 0 : 1
+  name  = local.alb_name
+}
+
+# ------------------------------------------------------------------------------
 # Application Load Balancer
 # ------------------------------------------------------------------------------
 resource "aws_lb" "this" {
@@ -63,6 +79,17 @@ resource "aws_lb" "this" {
       prefix  = var.access_logs_prefix
       enabled = true
     }
+  }
+
+  lifecycle {
+    create_before_destroy = true
+    ignore_changes = [
+      # Ignorar mudanças de Security Groups e Subnets se o ALB já existe
+      # Isso evita tentar mover o ALB para uma nova VPC sem recriar
+      # NOTA: Se precisar mover o ALB para nova VPC, será necessário recriar manualmente
+      security_groups,
+      subnets
+    ]
   }
 
   tags = merge(local.common_tags, {
@@ -152,11 +179,16 @@ resource "aws_lb_listener_rule" "this" {
 # ------------------------------------------------------------------------------
 # Target Group
 # ------------------------------------------------------------------------------
+# Use VPC ID from existing ALB if ALB already exists, otherwise use provided VPC ID
+locals {
+  target_group_vpc_id = var.create_alb ? var.vpc_id : (length(data.aws_lb.existing) > 0 ? data.aws_lb.existing[0].vpc_id : var.vpc_id)
+}
+
 resource "aws_lb_target_group" "this" {
   name        = local.target_group_name
   port        = var.port
   protocol    = var.protocol
-  vpc_id      = var.vpc_id
+  vpc_id      = local.target_group_vpc_id
   target_type = var.target_type
 
   health_check {
@@ -186,5 +218,9 @@ resource "aws_lb_target_group" "this" {
 
   lifecycle {
     create_before_destroy = true
+    ignore_changes = [
+      # Ignorar mudanças se já existe com nome diferente
+      name
+    ]
   }
 }
