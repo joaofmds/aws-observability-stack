@@ -1,0 +1,133 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - development
+      - main
+
+  pull_request:
+    branches:
+      - development
+      - main
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  ci:
+    name: CI - Test and Build
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Cache node modules
+        uses: actions/cache@v5
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install dependencies
+        run: npm install
+
+      # - name: Run tests
+      #   run: npm run test
+
+      - name: Build project
+        run: npm run build
+
+  ci_docker:
+    if: success() && github.event_name == 'push'
+    name: CI Docker
+    needs: ci
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.image-tag.outputs.image_tag }}
+      ecr_registry: ${{ steps.login-ecr.outputs.registry }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ github.ref == 'refs/heads/main' && secrets.AWS_OIDC_PRD || secrets.AWS_OIDC_DEV }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Define image tag
+        id: image-tag
+        run: |
+          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            PREFIX="prod"
+          else
+            PREFIX="dev"
+          fi
+          SHORT_SHA="${GITHUB_SHA::7}"
+          IMAGE_TAG="${PREFIX}-${SHORT_SHA}"
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_ENV"
+          echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Build, tag, and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+  cd:
+    name: CD Docker
+    needs: ci_docker
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ github.ref == 'refs/heads/main' && secrets.AWS_OIDC_PRD || secrets.AWS_OIDC_DEV }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Download ECS Task Definition
+        run: |
+          aws ecs describe-task-definition --task-definition ${{ secrets.ECS_TASK_DEFINITION }} \
+          --query taskDefinition > task-definition.json
+
+      - name: Update task definition with new image
+        id: render-task
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: backend-kyc
+          image: ${{ needs.ci_docker.outputs.ecr_registry }}/${{ secrets.ECR_REPOSITORY }}:${{ needs.ci_docker.outputs.image_tag }}
+
+      - name: Deploy Amazon ECS Task Definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-task.outputs.task-definition }}
+          service: ${{ secrets.ECS_SERVICE }}
+          cluster: ${{ github.ref == 'refs/heads/main' && secrets.ECS_CLUSTER_PRD || secrets.ECS_CLUSTER_DEV }}
+          wait-for-service-stability: true
