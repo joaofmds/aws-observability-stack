@@ -7,7 +7,7 @@ locals {
     Application = var.application
   })
 
-  repository_name   = "wiiascend/${var.application}-${var.environment}"
+  repository_name   = "r10/${var.application}-${var.environment}"
   target_group_name = "${var.application}-tg-${var.environment}"
   task_role_name    = "${var.application}-ecs-task-role-${var.environment}"
   task_policy_name  = "${var.application}-ecs-task-policy-${var.environment}"
