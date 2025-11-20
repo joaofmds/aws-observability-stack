@@ -19,6 +19,16 @@ output "ecr_registry_id" {
 # =============================================================================
 # IAM Outputs
 # =============================================================================
+output "execution_role_name" {
+  description = "Nome da IAM Execution Role do ECS (se criada)"
+  value       = module.ecs.execution_role_name
+}
+
+output "execution_role_arn" {
+  description = "ARN da IAM Execution Role do ECS (se criada)"
+  value       = module.ecs.execution_role_arn
+}
+
 output "task_role_name" {
   description = "Nome da IAM Role da task criada"
   value       = module.ecs.task_role_name
@@ -32,8 +42,38 @@ output "task_role_arn" {
 # =============================================================================
 # ALB Outputs
 # =============================================================================
+output "alb_arn" {
+  description = "ARN do Application Load Balancer (se criado)"
+  value       = module.alb.alb_arn
+}
+
+output "alb_dns_name" {
+  description = "DNS name do Application Load Balancer (se criado)"
+  value       = module.alb.alb_dns_name
+}
+
+output "alb_zone_id" {
+  description = "Zone ID do Application Load Balancer (se criado)"
+  value       = module.alb.alb_zone_id
+}
+
+output "alb_security_group_id" {
+  description = "ID do Security Group do ALB (se criado)"
+  value       = module.alb.alb_security_group_id
+}
+
+output "http_listener_arn" {
+  description = "ARN do listener HTTP (se criado)"
+  value       = module.alb.http_listener_arn
+}
+
+output "https_listener_arn" {
+  description = "ARN do listener HTTPS (se criado)"
+  value       = module.alb.https_listener_arn
+}
+
 output "listener_rule_arn" {
-  description = "ARN da regra de listener criada"
+  description = "ARN da regra de listener criada (se usar ALB existente)"
   value       = module.alb.listener_rule_arn
 }
 
@@ -45,6 +85,11 @@ output "target_group_arn" {
 output "target_group_name" {
   description = "Nome do Target Group"
   value       = module.alb.target_group_name
+}
+
+output "target_group_id" {
+  description = "ID do Target Group"
+  value       = module.alb.target_group_id
 }
 
 # =============================================================================
@@ -73,6 +118,21 @@ output "ecs_container_port" {
 output "ecs_cloudwatch_log_group_name" {
   description = "Nome do Log Group do ECS"
   value       = module.ecs.ecs_cloudwatch_log_group_name
+}
+
+output "ecs_cluster_id" {
+  description = "ID do ECS Cluster (criado ou existente)"
+  value       = module.ecs.cluster_id
+}
+
+output "ecs_cluster_name" {
+  description = "Nome do ECS Cluster (criado ou existente)"
+  value       = module.ecs.cluster_name
+}
+
+output "ecs_cluster_arn" {
+  description = "ARN do ECS Cluster (criado ou existente)"
+  value       = module.ecs.cluster_arn
 }
 
 # =============================================================================

@@ -1,4 +1,3 @@
-
 # ------------------------------------------------------------------------------
 # ECS Cluster
 # ------------------------------------------------------------------------------
@@ -14,6 +13,37 @@ resource "aws_ecs_cluster" "this" {
   tags = merge(local.common_tags, {
     Name = local.cluster_name
   })
+}
+
+# ------------------------------------------------------------------------------
+# IAM Role for ECS Task Execution
+# ------------------------------------------------------------------------------
+resource "aws_iam_role" "execution" {
+  count = var.execution_role_arn == null ? 1 : 0
+  name  = local.execution_role_name
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = merge(local.common_tags, {
+    Name = local.execution_role_name
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "execution" {
+  count      = var.execution_role_arn == null ? 1 : 0
+  role       = aws_iam_role.execution[0].name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 # ------------------------------------------------------------------------------
@@ -111,7 +141,7 @@ resource "aws_ecs_task_definition" "this" {
   network_mode             = "awsvpc"
   cpu                      = var.task_cpu
   memory                   = var.task_memory
-  execution_role_arn       = var.execution_role_arn
+  execution_role_arn       = var.execution_role_arn != null ? var.execution_role_arn : aws_iam_role.execution[0].arn
   task_role_arn            = var.task_role_arn != null ? var.task_role_arn : aws_iam_role.task[0].arn
 
   container_definitions = jsonencode(local.ecs_task_containers)

@@ -82,7 +82,8 @@ variable "container_memory" {
 
 variable "execution_role_arn" {
   type        = string
-  description = "ARN da Execution Role do ECS criada no módulo de Cluster."
+  description = "ARN da Execution Role do ECS (opcional). Se null, o módulo cria automaticamente."
+  default     = null
 }
 
 variable "task_role_arn" {

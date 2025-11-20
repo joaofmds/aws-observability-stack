@@ -126,9 +126,10 @@ locals {
   service_name         = "${var.application}-ecs-service-${var.environment}"
   task_definition_name = "${var.application}-td-${var.environment}"
   security_group_name  = "${var.application}-ecs-sg-${var.environment}"
-  cluster_name         = var.cluster_name != null ? var.cluster_name : "${var.application}-ecs-cluster-${var.environment}"
-  cluster_id           = var.create_cluster ? aws_ecs_cluster.this[0].id : var.cluster_id
-  task_role_name       = "${var.application}-ecs-task-role-${var.environment}"
-  task_policy_name     = "${var.application}-ecs-task-policy-${var.environment}"
+  cluster_name          = var.cluster_name != null ? var.cluster_name : "${var.application}-ecs-cluster-${var.environment}"
+  cluster_id            = var.create_cluster ? aws_ecs_cluster.this[0].id : var.cluster_id
+  task_role_name        = "${var.application}-ecs-task-role-${var.environment}"
+  task_policy_name      = "${var.application}-ecs-task-policy-${var.environment}"
+  execution_role_name   = "${var.application}-ecs-execution-role-${var.environment}"
 }
 
