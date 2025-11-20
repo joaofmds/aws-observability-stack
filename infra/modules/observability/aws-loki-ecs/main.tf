@@ -192,7 +192,7 @@ resource "aws_security_group_rule" "loki_ingress_sg" {
 # ---------------------------------------------------------------------------
 
 resource "aws_ecs_cluster" "loki" {
-  name = local.base_name
+  name = coalesce(var.ecs_cluster_name, local.base_name)
 
   setting {
     name  = "containerInsights"
