@@ -22,3 +22,18 @@ output "ecs_cloudwatch_log_group_name" {
   description = "Nome do Log Group do ECS"
   value       = var.enable_cloudwatch_logs ? aws_cloudwatch_log_group.this[0].name : null
 }
+
+output "cluster_id" {
+  description = "ID do ECS Cluster (criado ou existente)"
+  value       = local.cluster_id
+}
+
+output "cluster_name" {
+  description = "Nome do ECS Cluster (criado ou existente)"
+  value       = local.cluster_name
+}
+
+output "cluster_arn" {
+  description = "ARN do ECS Cluster (criado ou existente)"
+  value       = var.create_cluster ? aws_ecs_cluster.this[0].arn : null
+}

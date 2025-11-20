@@ -18,7 +18,7 @@ locals {
 
   loki_options = (
     var.loki_tenant_id != null && var.loki_tenant_id != ""
-  ) ? merge(
+    ) ? merge(
     local.loki_base_options,
     { tenant_id = var.loki_tenant_id }
   ) : local.loki_base_options
@@ -26,7 +26,7 @@ locals {
   app_log_configuration = var.enable_firelens && var.enable_loki ? {
     logDriver = "awsfirelens"
     options   = local.loki_options
-  } : var.enable_firelens ? {
+    } : var.enable_firelens ? {
     logDriver = "awsfirelens"
     options = {
       Name            = "s3"
@@ -36,7 +36,7 @@ locals {
       upload_timeout  = var.fluent_upload_timeout
       use_put_object  = "On"
     }
-  } : var.enable_cloudwatch_logs ? {
+    } : var.enable_cloudwatch_logs ? {
     logDriver = "awslogs"
     options = {
       awslogs-group         = local.cloudwatch_log_group_name
@@ -71,7 +71,7 @@ locals {
 
     environment = var.ecs_environment_variables
     secrets     = var.ecs_secrets
-  }, local.app_log_configuration != null ? {
+    }, local.app_log_configuration != null ? {
     logConfiguration = local.app_log_configuration
   } : {})
 
@@ -93,15 +93,15 @@ locals {
     # Essas envs hoje são opcionais (não usadas pelo FireLens automático),
     # mas podemos manter se quiser aproveitar depois numa imagem customizada.
     environment = [
-      { name = "APP_NAME",   value = var.application },
+      { name = "APP_NAME", value = var.application },
       { name = "ENVIRONMENT", value = var.environment },
-      { name = "S3_BUCKET",  value = var.s3_logs_bucket_name },
-      { name = "S3_PREFIX",  value = var.s3_logs_prefix },
+      { name = "S3_BUCKET", value = var.s3_logs_bucket_name },
+      { name = "S3_PREFIX", value = var.s3_logs_prefix },
       { name = "AWS_REGION", value = var.region },
-      { name = "S3_CLASS",   value = var.s3_logs_storage_class },
+      { name = "S3_CLASS", value = var.s3_logs_storage_class },
       { name = "TOTAL_FILE", value = var.fluent_total_file_size },
-      { name = "UPLOAD_TO",  value = var.fluent_upload_timeout },
-      { name = "COMPRESS",   value = var.fluent_compression }
+      { name = "UPLOAD_TO", value = var.fluent_upload_timeout },
+      { name = "COMPRESS", value = var.fluent_compression }
     ]
 
     healthCheck = {
@@ -111,7 +111,7 @@ locals {
       retries     = 3
       startPeriod = 10
     }
-  }, local.log_router_log_configuration != null ? {
+    }, local.log_router_log_configuration != null ? {
     logConfiguration = local.log_router_log_configuration
   } : {}) : null
 
@@ -123,8 +123,10 @@ locals {
     local.adot_container_definition != null ? [local.adot_container_definition] : []
   )
 
-  service_name = "${var.application}-ecs-service-${var.environment}"
+  service_name         = "${var.application}-ecs-service-${var.environment}"
   task_definition_name = "${var.application}-td-${var.environment}"
-  security_group_name = "${var.application}-ecs-sg-${var.environment}"
+  security_group_name  = "${var.application}-ecs-sg-${var.environment}"
+  cluster_name         = var.cluster_name != null ? var.cluster_name : "${var.application}-ecs-cluster-${var.environment}"
+  cluster_id           = var.create_cluster ? aws_ecs_cluster.this[0].id : var.cluster_id
 }
 

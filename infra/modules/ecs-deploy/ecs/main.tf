@@ -1,8 +1,27 @@
 
+# ------------------------------------------------------------------------------
+# ECS Cluster
+# ------------------------------------------------------------------------------
+resource "aws_ecs_cluster" "this" {
+  count = var.create_cluster ? 1 : 0
+  name  = local.cluster_name
 
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
+
+  tags = merge(local.common_tags, {
+    Name = local.cluster_name
+  })
+}
+
+# ------------------------------------------------------------------------------
+# ECS Service
+# ------------------------------------------------------------------------------
 resource "aws_ecs_service" "this" {
   name            = local.service_name
-  cluster         = var.cluster_id
+  cluster         = local.cluster_id
   task_definition = aws_ecs_task_definition.this.arn
   desired_count   = var.desired_count
 
@@ -68,7 +87,7 @@ resource "aws_appautoscaling_target" "this" {
   min_capacity = var.autoscaling_min_capacity
   max_capacity = var.autoscaling_max_capacity
 
-  resource_id = "service/${var.cluster_name}/${aws_ecs_service.this.name}"
+  resource_id = "service/${local.cluster_name}/${aws_ecs_service.this.name}"
 
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
@@ -129,6 +148,22 @@ resource "aws_appautoscaling_policy" "requests_scaling" {
   }
 }
 
+# ------------------------------------------------------------------------------
+# CloudWatch Log Group
+# ------------------------------------------------------------------------------
+resource "aws_cloudwatch_log_group" "this" {
+  count             = var.enable_cloudwatch_logs ? 1 : 0
+  name              = local.cloudwatch_log_group_name
+  retention_in_days = var.cloudwatch_log_retention_days
+
+  tags = merge(local.common_tags, {
+    Name = local.cloudwatch_log_group_name
+  })
+}
+
+# ------------------------------------------------------------------------------
+# Security Group
+# ------------------------------------------------------------------------------
 resource "aws_security_group" "ecs_sg" {
   name        = local.security_group_name
   description = "Security Group para o ECS"

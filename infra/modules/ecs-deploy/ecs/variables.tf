@@ -27,14 +27,26 @@ variable "tags" {
   description = "Tags padrão aplicadas aos recursos"
 }
 
+variable "create_cluster" {
+  description = "Se true, cria o ECS Cluster. Se false, usa cluster_id existente."
+  type        = bool
+  default     = true
+}
+
 variable "cluster_id" {
   type        = string
-  description = "ID do ECS Cluster já existente onde o Service será criado."
+  description = "ID do ECS Cluster já existente onde o Service será criado. Obrigatório se create_cluster = false."
+  default     = null
+  validation {
+    condition     = var.create_cluster || var.cluster_id != null
+    error_message = "Se create_cluster é false, cluster_id deve ser fornecido."
+  }
 }
 
 variable "cluster_name" {
-  description = "Nome do ECS Cluster onde o serviço será criado."
+  description = "Nome do ECS Cluster onde o serviço será criado. Se não informado e create_cluster = true, será gerado automaticamente."
   type        = string
+  default     = null
 }
 
 variable "task_cpu" {
@@ -156,7 +168,7 @@ Exemplo:
   { name = "API_URL",  value = "https://api.exemplo.com" }
 ]
 EOT
-  type    = list(object({
+  type = list(object({
     name  = string
     value = string
   }))
@@ -171,7 +183,7 @@ Exemplo:
   { name = "AWS_SECRETS_JSON", valueFrom = "arn:aws:secretsmanager:us-east-1:123456789012:secret:meu-segredo-abc123" }
 ]
 EOT
-  type    = list(object({
+  type = list(object({
     name      = string
     valueFrom = string
   }))
@@ -227,9 +239,15 @@ variable "autoscaling_scale_out_cooldown" {
 }
 
 variable "log_group" {
-  description = "CloudWatch Log Group"
+  description = "CloudWatch Log Group (nome completo). Se null, será gerado automaticamente."
   type        = string
   default     = null
+}
+
+variable "cloudwatch_log_retention_days" {
+  description = "Retenção em dias para o CloudWatch Log Group (7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653). Se null, logs não expiram."
+  type        = number
+  default     = 30
 }
 
 variable "region" {
