@@ -834,7 +834,7 @@ variable "aws_resource" {
 }
 
 variable "loki_host" {
-  description = "Host/DNS do endpoint Loki (ex: loki-nlb-o11y.internal)"
+  description = "Host/DNS do endpoint Loki (ex: loki-nlb-dev.internal)"
   type        = string
   default     = ""
 }
