@@ -1,4 +1,4 @@
-environment  = "o11y"
+environment  = "dev"
 project_name = "observability-core"
 owner        = "DevOps Team"
 application  = "observability-core"
