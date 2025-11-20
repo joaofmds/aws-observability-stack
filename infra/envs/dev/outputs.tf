@@ -84,3 +84,36 @@ output "loki_s3_bucket_name" {
   value       = var.enable_loki ? module.observability.loki_s3_bucket_name : null
 }
 
+# =============================================================================
+# ECS Deploy Outputs
+# =============================================================================
+output "ecs_service_name" {
+  description = "Nome do Serviço ECS criado"
+  value       = module.ecs_deploy.ecs_service_name
+}
+
+output "ecs_task_definition_arn" {
+  description = "ARN da task definition em uso"
+  value       = module.ecs_deploy.ecs_task_definition_arn
+}
+
+output "ecs_security_group_id" {
+  description = "Security group do serviço ECS"
+  value       = module.ecs_deploy.ecs_security_group_id
+}
+
+output "ecs_cluster_id" {
+  description = "ID do cluster ECS utilizado"
+  value       = module.ecs_deploy.ecs_cluster_id
+}
+
+output "ecs_cluster_name" {
+  description = "Nome do cluster ECS"
+  value       = module.ecs_deploy.ecs_cluster_name
+}
+
+output "ecs_cluster_arn" {
+  description = "ARN do cluster, se criado pelo módulo"
+  value       = module.ecs_deploy.ecs_cluster_arn
+}
+

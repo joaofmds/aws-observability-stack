@@ -120,5 +120,89 @@ module "observability" {
   loki_vpc_endpoint_allowed_principals = var.loki_vpc_endpoint_allowed_principals
 }
 
+# ------------------------------------------------------------------------------
+# ECS Deploy Blueprint
+# ------------------------------------------------------------------------------
+module "ecs_deploy" {
+  source = "../../modules/ecs-deploy"
+
+  environment  = var.environment
+  project_name = var.project_name
+  owner        = var.owner
+  application  = var.application
+  tags         = var.tags
+
+  region = var.region
+
+  # Networking
+  vpc_id         = data.terraform_remote_state.network.outputs.vpc_id
+  subnet_ids     = data.terraform_remote_state.network.outputs.private_subnet_ids
+  alb_sg_id      = var.alb_security_group_id
+  allowed_sg_ids = var.allowed_security_group_ids
+
+  # ALB
+  listener_arn  = var.alb_listener_arn
+  alb_priority  = var.alb_priority
+  path_patterns = var.alb_path_patterns
+  host_headers  = var.alb_host_headers
+
+  # ECS Cluster
+  create_cluster = true
+  cluster_id     = null
+  cluster_name   = "${var.application}-cluster-${var.environment}"
+
+  # ECS Service
+  container_port             = var.container_port
+  desired_count              = var.desired_count
+  capacity_provider_strategy = var.capacity_provider_strategy
+  assign_public_ip           = false
+
+  # Task sizing
+  task_cpu         = var.task_cpu
+  task_memory      = var.task_memory
+  container_cpu    = var.container_cpu
+  container_memory = var.container_memory
+
+  # IAM / Execution roles
+  execution_role_arn = var.ecs_execution_role_arn
+
+  # Autoscaling (optional)
+  enable_autoscaling                = var.enable_autoscaling
+  autoscaling_min_capacity          = var.autoscaling_min_capacity
+  autoscaling_max_capacity          = var.autoscaling_max_capacity
+  autoscaling_cpu_target_value      = var.autoscaling_cpu_target_value
+  autoscaling_requests_target_value = var.autoscaling_requests_target_value
+  load_balancer_arn_suffix          = var.load_balancer_arn_suffix
+  autoscaling_scale_in_cooldown     = var.autoscaling_scale_in_cooldown
+  autoscaling_scale_out_cooldown    = var.autoscaling_scale_out_cooldown
+
+  # FireLens / Logging
+  enable_cloudwatch_logs             = true
+  enable_firelens                    = var.enable_firelens
+  s3_logs_bucket_name                = var.s3_logs_bucket_name
+  s3_logs_prefix                     = var.s3_logs_prefix
+  s3_logs_storage_class              = var.s3_logs_storage_class
+  s3_logs_force_destroy              = var.s3_logs_force_destroy
+  s3_logs_transition_to_ia_days      = var.s3_logs_transition_to_ia_days
+  s3_logs_transition_to_glacier_days = var.s3_logs_transition_to_glacier_days
+  s3_logs_expiration_days            = var.s3_logs_expiration_days
+
+  # ADOT
+  enable_metrics       = true
+  amp_remote_write_url = module.observability.prometheus_remote_write_endpoint
+  amp_workspace_arn    = module.observability.prometheus_workspace_arn
+
+  # Loki integration
+  loki_host = module.observability.loki_host
+  loki_port = module.observability.loki_port
+
+  # Secrets Manager
+  create_secret        = var.create_secret
+  secret_name_override = var.secret_name_override
+  secret_description   = var.secret_description
+  secret_string        = var.secret_string
+  secret_kms_key_id    = var.secret_kms_key_id
+}
+
 # Data source for current AWS account ID
 data "aws_caller_identity" "current" {}
