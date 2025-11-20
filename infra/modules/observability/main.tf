@@ -111,9 +111,17 @@ module "loki" {
   loki_port                       = var.loki_port
   retention_days                  = var.loki_retention_days
   allowed_cidr_blocks             = var.loki_allowed_cidr_blocks
-  allowed_security_group_ids      = var.loki_allowed_security_group_ids
+  # Adiciona automaticamente o security group do Grafana se estiver configurado com VPC
+  allowed_security_group_ids      = concat(
+    var.loki_allowed_security_group_ids,
+    var.grafana_vpc_id != null && module.grafana.grafana_workspace_security_group_id != null ? [module.grafana.grafana_workspace_security_group_id] : []
+  )
   capacity_provider_strategies    = var.loki_capacity_provider_strategies
   cloudwatch_log_retention_days   = var.loki_cloudwatch_log_retention_days
   vpc_endpoint_allowed_principals = var.loki_vpc_endpoint_allowed_principals
+
+  depends_on = [
+    module.grafana
+  ]
 }
 

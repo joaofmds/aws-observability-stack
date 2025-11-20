@@ -857,3 +857,9 @@ variable "loki_tenant_id" {
   default     = null
 }
 
+variable "loki_security_group_id" {
+  description = "ID do Security Group do Loki (usado para permitir tráfego do ECS)"
+  type        = string
+  default     = null
+}
+
