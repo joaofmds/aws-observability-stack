@@ -176,8 +176,11 @@ resource "aws_security_group_rule" "loki_ingress_cidr" {
   security_group_id = aws_security_group.loki_tasks.id
 }
 
+# Security Group rules para lista conhecida no plan time
+# Security Groups adicionados dinamicamente devem usar aws_security_group_rule separados
+# Usa toset() apenas se a lista for conhecida e não vazia
 resource "aws_security_group_rule" "loki_ingress_sg" {
-  for_each = toset(var.allowed_security_group_ids)
+  for_each = length(var.allowed_security_group_ids) > 0 ? toset([for sg_id in var.allowed_security_group_ids : sg_id if sg_id != null && sg_id != ""]) : toset([])
 
   type                     = "ingress"
   from_port                = var.loki_port
@@ -308,6 +311,14 @@ resource "aws_lb" "loki" {
   load_balancer_type = "network"
   subnets            = var.private_subnet_ids
 
+  lifecycle {
+    create_before_destroy = true
+    # Ignorar mudanças em subnets e VPC se já existe
+    ignore_changes = [
+      subnets
+    ]
+  }
+
   tags = merge(local.common_tags, {
     Name = "grafana-loki-${var.environment}"
   })
@@ -328,6 +339,15 @@ resource "aws_lb_target_group" "loki" {
     unhealthy_threshold = 3
     timeout             = 5
     interval            = 30
+  }
+
+  lifecycle {
+    create_before_destroy = true
+    ignore_changes = [
+      # Ignorar mudanças se já existe com nome diferente
+      name,
+      vpc_id
+    ]
   }
 
   tags = merge(local.common_tags, {
