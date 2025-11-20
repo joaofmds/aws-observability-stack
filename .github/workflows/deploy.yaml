@@ -37,12 +37,14 @@ jobs:
             ${{ runner.os }}-npm-
 
       - name: Install dependencies
+        working-directory: app
         run: npm install
 
       # - name: Run tests
       #   run: npm run test
 
       - name: Build project
+        working-directory: app
         run: npm run build
 
   ci_docker:
