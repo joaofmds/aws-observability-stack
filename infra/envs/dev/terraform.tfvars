@@ -4,12 +4,30 @@ owner        = "DevOps Team"
 application  = "observability-core"
 region       = "us-east-1"
 
-alb_listener_arn           = "arn:aws:elasticloadbalancing:us-east-1:625997627087:loadbalancer/app/app-loki-alb/c3107481bf98168a"
-alb_security_group_id      = "sg-0f472123ba22ec1a1"
+# ALB Configuration
+create_alb                           = true
+alb_internal                         = false
+alb_allowed_cidr_blocks              = []
+alb_enable_https                     = false
+alb_certificate_arn                  = null
+alb_ssl_policy                       = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+alb_https_redirect                   = true
+alb_enable_deletion_protection       = false
+alb_enable_http2                     = true
+alb_enable_cross_zone_load_balancing = true
+alb_idle_timeout                     = 60
+alb_ip_address_type                  = "ipv4"
+alb_access_logs_bucket               = null
+alb_access_logs_prefix               = null
+
+# ALB Listener Rule (only used if create_alb = false)
+alb_listener_arn      = null
+alb_security_group_id = null
+alb_priority          = 100
+alb_path_patterns     = ["/*"]
+alb_host_headers      = []
+
 allowed_security_group_ids = []
-alb_priority               = 100
-alb_path_patterns          = ["/"]
-alb_host_headers           = []
 
 container_port = 3000
 desired_count  = 1
@@ -25,8 +43,6 @@ task_cpu         = 512
 task_memory      = 1024
 container_cpu    = 256
 container_memory = 512
-
-ecs_execution_role_arn = "arn:aws:iam::123456789012:role/dev-ecs-execution-role"
 
 enable_autoscaling                = false
 autoscaling_min_capacity          = 1

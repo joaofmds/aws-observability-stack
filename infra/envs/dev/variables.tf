@@ -55,14 +55,102 @@ variable "loki_vpc_endpoint_allowed_principals" {
 # ------------------------------------------------------------------------------
 # ECS Deploy variables
 # ------------------------------------------------------------------------------
-variable "alb_listener_arn" {
-  description = "ARN do listener do ALB para criar a regra de encaminhamento."
+
+# ALB Configuration
+variable "create_alb" {
+  description = "Se true, cria o Application Load Balancer completo. Se false, apenas cria listener rule em ALB existente"
+  type        = bool
+  default     = true
+}
+
+variable "alb_internal" {
+  description = "Se true, cria um ALB interno. Se false, cria um ALB público"
+  type        = bool
+  default     = false
+}
+
+variable "alb_allowed_cidr_blocks" {
+  description = "Lista de blocos CIDR permitidos para acessar o ALB (usado apenas se alb_internal=true)"
+  type        = list(string)
+  default     = []
+}
+
+variable "alb_enable_https" {
+  description = "Se true, habilita o listener HTTPS no ALB"
+  type        = bool
+  default     = false
+}
+
+variable "alb_certificate_arn" {
+  description = "ARN do certificado SSL/TLS para o listener HTTPS"
   type        = string
+  default     = null
+}
+
+variable "alb_ssl_policy" {
+  description = "Política SSL a ser usada no listener HTTPS"
+  type        = string
+  default     = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+}
+
+variable "alb_https_redirect" {
+  description = "Se true, redireciona HTTP para HTTPS automaticamente"
+  type        = bool
+  default     = true
+}
+
+variable "alb_enable_deletion_protection" {
+  description = "Se true, protege o ALB contra exclusão acidental"
+  type        = bool
+  default     = false
+}
+
+variable "alb_enable_http2" {
+  description = "Se true, habilita HTTP/2 no ALB"
+  type        = bool
+  default     = true
+}
+
+variable "alb_enable_cross_zone_load_balancing" {
+  description = "Se true, habilita cross-zone load balancing"
+  type        = bool
+  default     = true
+}
+
+variable "alb_idle_timeout" {
+  description = "Tempo limite de inatividade (em segundos) antes de fechar a conexão"
+  type        = number
+  default     = 60
+}
+
+variable "alb_ip_address_type" {
+  description = "Tipo de endereço IP (ipv4 ou dualstack)"
+  type        = string
+  default     = "ipv4"
+}
+
+variable "alb_access_logs_bucket" {
+  description = "Nome do bucket S3 para armazenar os access logs do ALB (opcional)"
+  type        = string
+  default     = null
+}
+
+variable "alb_access_logs_prefix" {
+  description = "Prefixo para os access logs no bucket S3"
+  type        = string
+  default     = null
+}
+
+variable "alb_listener_arn" {
+  description = "ARN do listener do ALB para criar a regra de encaminhamento (usado apenas se create_alb=false)"
+  type        = string
+  default     = null
 }
 
 variable "alb_security_group_id" {
-  description = "Security Group do ALB que deverá acessar o ECS."
+  description = "Security Group do ALB que deverá acessar o ECS (usado apenas se create_alb=false)"
   type        = string
+  default     = null
 }
 
 variable "allowed_security_group_ids" {
@@ -138,11 +226,6 @@ variable "container_memory" {
   description = "Memória do container principal (MiB)."
   type        = number
   default     = 512
-}
-
-variable "ecs_execution_role_arn" {
-  description = "ARN da ECS Execution Role usada para pull da imagem."
-  type        = string
 }
 
 variable "enable_autoscaling" {

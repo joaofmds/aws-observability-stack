@@ -137,12 +137,29 @@ module "ecs_deploy" {
   # Networking
   vpc_id         = data.terraform_remote_state.network.outputs.vpc_id
   subnet_ids     = data.terraform_remote_state.network.outputs.private_subnet_ids
-  alb_sg_id      = var.alb_security_group_id
+  alb_sg_id      = var.create_alb ? null : var.alb_security_group_id
   allowed_sg_ids = var.allowed_security_group_ids
 
-  # ALB
-  listener_arn  = var.alb_listener_arn
-  alb_priority  = var.alb_priority
+  # ALB Creation
+  create_alb                           = var.create_alb
+  alb_subnet_ids                       = var.create_alb ? data.terraform_remote_state.network.outputs.public_subnet_ids : []
+  alb_internal                         = var.alb_internal
+  alb_allowed_cidr_blocks              = var.alb_allowed_cidr_blocks
+  alb_enable_https                     = var.alb_enable_https
+  alb_certificate_arn                  = var.alb_certificate_arn
+  alb_ssl_policy                       = var.alb_ssl_policy
+  alb_https_redirect                   = var.alb_https_redirect
+  alb_enable_deletion_protection       = var.alb_enable_deletion_protection
+  alb_enable_http2                     = var.alb_enable_http2
+  alb_enable_cross_zone_load_balancing = var.alb_enable_cross_zone_load_balancing
+  alb_idle_timeout                     = var.alb_idle_timeout
+  alb_ip_address_type                  = var.alb_ip_address_type
+  alb_access_logs_bucket               = var.alb_access_logs_bucket
+  alb_access_logs_prefix               = var.alb_access_logs_prefix
+
+  # ALB Listener Rule (for existing ALB)
+  listener_arn  = var.create_alb ? null : var.alb_listener_arn
+  alb_priority  = var.create_alb ? null : var.alb_priority
   path_patterns = var.alb_path_patterns
   host_headers  = var.alb_host_headers
 
@@ -162,9 +179,6 @@ module "ecs_deploy" {
   task_memory      = var.task_memory
   container_cpu    = var.container_cpu
   container_memory = var.container_memory
-
-  # IAM / Execution roles
-  execution_role_arn = var.ecs_execution_role_arn
 
   # Autoscaling (optional)
   enable_autoscaling                = var.enable_autoscaling
