@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "node app.js"
+    "dev": "node app.js",
+    "build": "echo \"Skipping build step for Node.js app\""
   },
   "author": "",
   "license": "MIT",
