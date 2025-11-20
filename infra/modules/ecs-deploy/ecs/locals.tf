@@ -8,13 +8,13 @@ locals {
 
   cloudwatch_log_group_name = coalesce(var.log_group, "/ecs/${var.application}-${var.environment}")
 
-  loki_base_options = {
+  loki_base_options = var.loki_host != null && var.loki_host != "" ? {
     Name   = "loki"
     host   = var.loki_host
     port   = tostring(var.loki_port)
     tls    = var.loki_tls ? "on" : "off"
     labels = "job=${var.application},env=${var.environment},container_name=${var.application}"
-  }
+  } : {}
 
   loki_options = (
     var.loki_tenant_id != null && var.loki_tenant_id != ""
@@ -23,7 +23,10 @@ locals {
     { tenant_id = var.loki_tenant_id }
   ) : local.loki_base_options
 
-  app_log_configuration = var.enable_firelens && var.enable_loki ? {
+  # Se enable_loki está true E loki_host está configurado, usa Loki
+  # Caso contrário, se enable_firelens está true, usa S3
+  # Se nenhum dos dois, usa CloudWatch Logs
+  app_log_configuration = var.enable_firelens && var.enable_loki && var.loki_host != null && var.loki_host != "" ? {
     logDriver = "awsfirelens"
     options   = local.loki_options
     } : var.enable_firelens ? {

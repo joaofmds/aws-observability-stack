@@ -54,6 +54,7 @@ autoscaling_scale_in_cooldown     = 300
 autoscaling_scale_out_cooldown    = 60
 
 enable_firelens                    = true
+enable_loki                        = true
 s3_logs_bucket_name                = "dev-firelens-logs-bucket"
 s3_logs_prefix                     = "apps"
 s3_logs_storage_class              = "STANDARD_IA"

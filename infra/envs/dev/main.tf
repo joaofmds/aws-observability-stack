@@ -207,8 +207,9 @@ module "ecs_deploy" {
   amp_workspace_arn    = module.observability.prometheus_workspace_arn
 
   # Loki integration
-  loki_host = module.observability.loki_host
-  loki_port = module.observability.loki_port
+  enable_loki = var.enable_loki
+  loki_host   = var.enable_loki ? module.observability.loki_host : null
+  loki_port   = var.enable_loki ? module.observability.loki_port : null
 
   # Secrets Manager
   create_secret        = var.create_secret
