@@ -52,11 +52,6 @@ output "nat_gateway_ids" {
   value       = aws_nat_gateway.this[*].id
 }
 
-output "nat_gateway_arns" {
-  description = "ARNs dos NAT Gateways criados"
-  value       = aws_nat_gateway.this[*].arn
-}
-
 output "nat_public_ips" {
   description = "Elastic IPs públicos dos NAT Gateways"
   value       = aws_eip.nat[*].public_ip
