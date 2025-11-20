@@ -120,7 +120,7 @@ jobs:
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: task-definition.json
-          container-name: backend-kyc
+          container-name: observability-core
           image: ${{ needs.ci_docker.outputs.ecr_registry }}/${{ secrets.ECR_REPOSITORY }}:${{ needs.ci_docker.outputs.image_tag }}
 
       - name: Deploy Amazon ECS Task Definition
