@@ -111,11 +111,7 @@ module "loki" {
   loki_port                       = var.loki_port
   retention_days                  = var.loki_retention_days
   allowed_cidr_blocks             = var.loki_allowed_cidr_blocks
-  # Adiciona automaticamente o security group do Grafana se estiver configurado com VPC
-  allowed_security_group_ids      = concat(
-    var.loki_allowed_security_group_ids,
-    var.grafana_vpc_id != null && module.grafana.grafana_workspace_security_group_id != null ? [module.grafana.grafana_workspace_security_group_id] : []
-  )
+  allowed_security_group_ids      = var.loki_allowed_security_group_ids
   capacity_provider_strategies    = var.loki_capacity_provider_strategies
   cloudwatch_log_retention_days   = var.loki_cloudwatch_log_retention_days
   vpc_endpoint_allowed_principals = var.loki_vpc_endpoint_allowed_principals
@@ -123,5 +119,30 @@ module "loki" {
   depends_on = [
     module.grafana
   ]
+}
+
+# ------------------------------------------------------------------------------
+# Allow Grafana Security Group to access Loki Security Group
+# (Adicionado após ambos serem criados para evitar dependências circulares)
+# ------------------------------------------------------------------------------
+resource "aws_security_group_rule" "loki_ingress_from_grafana" {
+  count = var.enable_loki && length(var.grafana_vpc_subnet_ids) > 0 ? 1 : 0
+
+  type                     = "ingress"
+  from_port                = var.loki_port
+  to_port                  = var.loki_port
+  protocol                 = "tcp"
+  source_security_group_id = module.grafana.grafana_workspace_security_group_id
+  security_group_id        = module.loki[0].loki_task_security_group_id
+  description              = "Allow Grafana workspace to access Loki"
+
+  depends_on = [
+    module.grafana,
+    module.loki
+  ]
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
