@@ -365,3 +365,54 @@ variable "secret_kms_key_id" {
   type    = string
   default = null
 }
+
+# ------------------------------------------------------------------------------
+# VPC Configuration
+# ------------------------------------------------------------------------------
+variable "vpc_cidr" {
+  description = "CIDR block para a VPC (ex: 10.0.0.0/16)"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "availability_zones" {
+  description = "Lista de Availability Zones onde criar as subnets"
+  type        = list(string)
+  default     = ["us-east-1a", "us-east-1b", "us-east-1c"]
+}
+
+variable "enable_nat_gateway" {
+  description = "Habilitar criação de NAT Gateways nas subnets públicas"
+  type        = bool
+  default     = true
+}
+
+variable "single_nat_gateway" {
+  description = "Se true, cria apenas um NAT Gateway na primeira AZ (reduz custos)"
+  type        = bool
+  default     = false
+}
+
+variable "enable_database_subnets" {
+  description = "Criar subnets dedicadas para bancos de dados (isoladas)"
+  type        = bool
+  default     = false
+}
+
+variable "enable_vpc_endpoints" {
+  description = "Habilitar criação de VPC Endpoints"
+  type        = bool
+  default     = false
+}
+
+variable "vpc_endpoints" {
+  description = "Lista de serviços AWS para criar VPC Endpoints"
+  type        = list(string)
+  default     = []
+}
+
+variable "enable_flow_log" {
+  description = "Habilitar VPC Flow Logs"
+  type        = bool
+  default     = false
+}

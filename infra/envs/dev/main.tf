@@ -1,12 +1,31 @@
 # Data sources
-data "terraform_remote_state" "network" {
-  backend = "s3"
-  config = {
-    bucket       = "r10score-terraform-state-dev"
-    key          = "network/dev/terraform.tfstate"
-    region       = "us-east-1"
-    use_lockfile = true
-  }
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+data "aws_caller_identity" "current" {}
+
+# ------------------------------------------------------------------------------
+# VPC Module
+# ------------------------------------------------------------------------------
+module "vpc" {
+  source = "../../modules/vpc"
+
+  environment  = var.environment
+  project_name = var.project_name
+  owner        = var.owner
+  application  = var.application
+  tags         = var.tags
+
+  vpc_cidr           = var.vpc_cidr
+  availability_zones = length(var.availability_zones) > 0 ? var.availability_zones : slice(data.aws_availability_zones.available.names, 0, 3)
+
+  enable_nat_gateway      = var.enable_nat_gateway
+  single_nat_gateway      = var.single_nat_gateway
+  enable_database_subnets = var.enable_database_subnets
+  enable_vpc_endpoints    = var.enable_vpc_endpoints
+  vpc_endpoints           = var.vpc_endpoints
+  enable_flow_log         = var.enable_flow_log
 }
 
 # ------------------------------------------------------------------------------
@@ -31,8 +50,8 @@ module "observability" {
   grafana_account_access_type      = "CURRENT_ACCOUNT"
   grafana_alerting_enabled         = true
   grafana_enable_plugin_management = true
-  grafana_vpc_id                   = data.terraform_remote_state.network.outputs.vpc_id
-  grafana_vpc_subnet_ids           = data.terraform_remote_state.network.outputs.private_subnet_ids
+  grafana_vpc_id                   = module.vpc.vpc_id
+  grafana_vpc_subnet_ids           = module.vpc.private_subnet_ids
 
   # Custom Grafana IAM Policy (includes Prometheus, CloudWatch, SNS, SES)
   grafana_custom_policy_json = jsonencode({
@@ -101,8 +120,8 @@ module "observability" {
   # Loki Configuration
   enable_loki                        = var.enable_loki
   loki_name_prefix                   = "dev"
-  loki_vpc_id                        = data.terraform_remote_state.network.outputs.vpc_id
-  loki_private_subnet_ids            = data.terraform_remote_state.network.outputs.private_subnet_ids
+  loki_vpc_id                        = module.vpc.vpc_id
+  loki_private_subnet_ids            = module.vpc.private_subnet_ids
   loki_ecs_cluster_name              = "dev-loki-cluster"
   loki_desired_count                 = 1
   loki_retention_days                = 30
@@ -135,14 +154,14 @@ module "ecs_deploy" {
   region = var.region
 
   # Networking
-  vpc_id         = data.terraform_remote_state.network.outputs.vpc_id
-  subnet_ids     = data.terraform_remote_state.network.outputs.private_subnet_ids
+  vpc_id         = module.vpc.vpc_id
+  subnet_ids     = module.vpc.private_subnet_ids
   alb_sg_id      = var.create_alb ? null : var.alb_security_group_id
   allowed_sg_ids = var.allowed_security_group_ids
 
   # ALB Creation
   create_alb                           = var.create_alb
-  alb_subnet_ids                       = var.create_alb ? data.terraform_remote_state.network.outputs.public_subnet_ids : []
+  alb_subnet_ids                       = var.create_alb ? module.vpc.public_subnet_ids : []
   alb_internal                         = var.alb_internal
   alb_allowed_cidr_blocks              = var.alb_allowed_cidr_blocks
   alb_enable_https                     = var.alb_enable_https
@@ -219,6 +238,3 @@ module "ecs_deploy" {
   secret_string        = var.secret_string
   secret_kms_key_id    = var.secret_kms_key_id
 }
-
-# Data source for current AWS account ID
-data "aws_caller_identity" "current" {}

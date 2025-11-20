@@ -165,3 +165,36 @@ output "target_group_id" {
   value       = module.ecs_deploy.target_group_id
 }
 
+# =============================================================================
+# VPC Outputs
+# =============================================================================
+output "vpc_id" {
+  description = "ID da VPC criada"
+  value       = module.vpc.vpc_id
+}
+
+output "vpc_cidr_block" {
+  description = "CIDR block da VPC"
+  value       = module.vpc.vpc_cidr_block
+}
+
+output "public_subnet_ids" {
+  description = "IDs das subnets públicas"
+  value       = module.vpc.public_subnet_ids
+}
+
+output "private_subnet_ids" {
+  description = "IDs das subnets privadas"
+  value       = module.vpc.private_subnet_ids
+}
+
+output "nat_gateway_ids" {
+  description = "IDs dos NAT Gateways criados"
+  value       = module.vpc.nat_gateway_ids
+}
+
+output "internet_gateway_id" {
+  description = "ID do Internet Gateway (se criado)"
+  value       = module.vpc.internet_gateway_id
+}
+
