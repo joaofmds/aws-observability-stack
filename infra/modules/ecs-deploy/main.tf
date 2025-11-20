@@ -1,4 +1,6 @@
 # Locals for common resources
+data "aws_caller_identity" "current" {}
+
 locals {
   common_tags = merge(var.tags, {
     Environment = var.environment
@@ -26,6 +28,7 @@ module "adot" {
   amp_remote_write_url   = var.amp_remote_write_url
   amp_workspace_arn      = var.amp_workspace_arn
   assume_role_principals = var.adot_assume_role_principals
+  task_role_arn          = null # Será atualizado via aws_iam_role abaixo
   log_group              = var.log_group
   log_stream_prefix      = var.log_stream_prefix
   volume_name            = var.volume_name
@@ -256,6 +259,69 @@ resource "aws_iam_role_policy_attachment" "firelens_task_role" {
   depends_on = [
     module.ecs,
     module.firelens
+  ]
+}
+
+# ------------------------------------------------------------------------------
+# Update ADOT remote write role assume policy to include ECS task role
+# Replace the role to update assume_role_policy with task role included
+# ------------------------------------------------------------------------------
+locals {
+  # Extract role name from ARN using regex replace
+  adot_remote_write_role_name = var.enable_metrics && module.adot.remote_write_role_arn != null ? regex("[^/]+$", module.adot.remote_write_role_arn) : null
+}
+
+data "aws_iam_role" "adot_remote_write" {
+  count = var.enable_metrics && module.ecs.task_role_arn != null && local.adot_remote_write_role_name != null ? 1 : 0
+  name  = local.adot_remote_write_role_name
+
+  depends_on = [
+    module.adot,
+    module.ecs
+  ]
+}
+
+resource "aws_iam_role" "adot_remote_write_updated" {
+  count = var.enable_metrics && module.ecs.task_role_arn != null && local.adot_remote_write_role_name != null ? 1 : 0
+
+  name = local.adot_remote_write_role_name
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          AWS = distinct(concat(
+            var.adot_assume_role_principals,
+            [module.ecs.task_role_arn]
+          ))
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = data.aws_iam_role.adot_remote_write[0].tags
+
+  depends_on = [
+    module.ecs,
+    module.adot
+  ]
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# Reattach the remote write policy after role is replaced
+resource "aws_iam_role_policy_attachment" "adot_remote_write_policy_reattach" {
+  count      = var.enable_metrics && module.ecs.task_role_arn != null && module.adot.remote_write_role_arn != null ? 1 : 0
+  role       = aws_iam_role.adot_remote_write_updated[0].name
+  policy_arn = module.adot.remote_write_policy_arn
+
+  depends_on = [
+    aws_iam_role.adot_remote_write_updated,
+    module.adot
   ]
 }
 

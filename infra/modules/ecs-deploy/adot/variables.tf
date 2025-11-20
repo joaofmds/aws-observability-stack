@@ -104,3 +104,9 @@ variable "assume_role_principals" {
   type        = list(string)
   default     = []
 }
+
+variable "task_role_arn" {
+  description = "ARN da task role do ECS que será adicionada aos princípios permitidos para assumir a role de remote write"
+  type        = string
+  default     = null
+}
