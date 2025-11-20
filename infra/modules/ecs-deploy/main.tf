@@ -250,7 +250,7 @@ module "firelens" {
 resource "aws_iam_role_policy_attachment" "firelens_task_role" {
   count = var.enable_firelens ? 1 : 0
 
-  role       = module.ecs.task_role_arn
+  role       = module.ecs.task_role_name
   policy_arn = module.firelens.firelens_task_role_policy_arn
 
   depends_on = [
