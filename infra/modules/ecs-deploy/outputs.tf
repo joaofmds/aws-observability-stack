@@ -3,17 +3,17 @@
 # =============================================================================
 output "ecr_repository_url" {
   description = "URL do repositório ECR criado"
-  value       = aws_ecr_repository.this.repository_url
+  value       = module.ecr.repository_url
 }
 
 output "ecr_repository_arn" {
   description = "ARN do repositório ECR criado"
-  value       = aws_ecr_repository.this.arn
+  value       = module.ecr.repository_arn
 }
 
 output "ecr_registry_id" {
   description = "ID do registro AWS associado ao repositório ECR"
-  value       = aws_ecr_repository.this.registry_id
+  value       = module.ecr.registry_id
 }
 
 # =============================================================================
@@ -21,17 +21,12 @@ output "ecr_registry_id" {
 # =============================================================================
 output "task_role_name" {
   description = "Nome da IAM Role da task criada"
-  value       = aws_iam_role.this.name
+  value       = module.ecs.task_role_name
 }
 
 output "task_role_arn" {
   description = "ARN da IAM Role da task criada"
-  value       = aws_iam_role.this.arn
-}
-
-output "task_policy_arn" {
-  description = "ARN da política IAM criada (se aplicável)"
-  value       = var.task_role_policy_json != null ? aws_iam_policy.task_role[0].arn : null
+  value       = module.ecs.task_role_arn
 }
 
 # =============================================================================
@@ -39,17 +34,17 @@ output "task_policy_arn" {
 # =============================================================================
 output "listener_rule_arn" {
   description = "ARN da regra de listener criada"
-  value       = aws_lb_listener_rule.this.arn
+  value       = module.alb.listener_rule_arn
 }
 
 output "target_group_arn" {
   description = "ARN do Target Group"
-  value       = aws_lb_target_group.this.arn
+  value       = module.alb.target_group_arn
 }
 
 output "target_group_name" {
   description = "Nome do Target Group"
-  value       = aws_lb_target_group.this.name
+  value       = module.alb.target_group_name
 }
 
 # =============================================================================
@@ -88,6 +83,11 @@ output "adot_container_definition" {
   value       = module.adot.adot_container_definition
 }
 
+output "adot_remote_write_role_arn" {
+  description = "ARN da role utilizada pelo ADOT para remote write"
+  value       = module.adot.remote_write_role_arn
+}
+
 # =============================================================================
 # Secrets Manager Outputs
 # =============================================================================
@@ -111,12 +111,12 @@ output "secret_id" {
 # =============================================================================
 output "firelens_s3_bucket_name" {
   description = "Nome do bucket S3 utilizado para armazenar os logs via FireLens (se aplicável)"
-  value       = var.enable_firelens ? module.firelens[0].firelens_s3_bucket_name : null
+  value       = module.firelens.firelens_s3_bucket_name
 }
 
 output "firelens_s3_bucket_arn" {
   description = "ARN do bucket S3 utilizado para logs (se aplicável)"
-  value       = var.enable_firelens ? module.firelens[0].firelens_s3_bucket_arn : null
+  value       = module.firelens.firelens_s3_bucket_arn
 }
 
 # =============================================================================

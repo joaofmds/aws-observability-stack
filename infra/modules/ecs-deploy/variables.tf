@@ -88,6 +88,10 @@ variable "task_managed_policy_arns" {
 }
 
 # =============================================================================
+# IAM GENERAL
+# =============================================================================
+
+# =============================================================================
 # SECRETS MANAGER
 # =============================================================================
 variable "create_secret" {
@@ -124,14 +128,26 @@ variable "secret_kms_key_id" {
 # =============================================================================
 # ECS CLUSTER
 # =============================================================================
+variable "create_cluster" {
+  description = "Se true, cria o ECS Cluster internamente. Se false, é necessário informar cluster_id e cluster_name."
+  type        = bool
+  default     = true
+}
+
 variable "cluster_id" {
   type        = string
-  description = "ID do ECS Cluster já existente onde o Service será criado."
+  description = "ID do ECS Cluster já existente onde o Service será criado. Obrigatório se create_cluster = false."
+  default     = null
+  validation {
+    condition     = var.create_cluster || var.cluster_id != null
+    error_message = "Se create_cluster é false, cluster_id deve ser fornecido."
+  }
 }
 
 variable "cluster_name" {
-  description = "Nome do ECS Cluster onde o serviço será criado."
+  description = "Nome do ECS Cluster onde o serviço será criado. Se não informado e create_cluster = true, será gerado automaticamente."
   type        = string
+  default     = null
 }
 
 variable "execution_role_arn" {
@@ -139,9 +155,10 @@ variable "execution_role_arn" {
   description = "ARN da Execution Role do ECS criada no módulo de Cluster."
 }
 
-variable "ecs_execution_role_name" {
-  description = "Nome do ECS Execution Role"
+variable "task_role_arn" {
+  description = "ARN de uma task role existente (opcional). Se null, o módulo ECS criará uma nova role."
   type        = string
+  default     = null
 }
 
 # =============================================================================
@@ -412,9 +429,16 @@ variable "region" {
   type        = string
 }
 
-variable "adot_assume_role_arn" {
-  description = "ARN da role que o ADOT Collector deve assumir para enviar métricas para o AMP"
+variable "amp_workspace_arn" {
+  description = "ARN do workspace AMP utilizado para limitar as permissões de remote write"
   type        = string
+  default     = null
+}
+
+variable "adot_assume_role_principals" {
+  description = "Principais (ARNs) autorizados a assumir a role de remote write criada pelo módulo ADOT"
+  type        = list(string)
+  default     = []
 }
 
 variable "amp_remote_write_url" {
@@ -426,6 +450,12 @@ variable "log_group" {
   description = "CloudWatch Log Group"
   type        = string
   default     = null
+}
+
+variable "cloudwatch_log_retention_days" {
+  description = "Retenção (em dias) aplicada ao CloudWatch Log Group criado pelo módulo ECS."
+  type        = number
+  default     = 30
 }
 
 variable "log_stream_prefix" {
