@@ -15,5 +15,5 @@ output "grafana_workspace_arn" {
 
 output "grafana_workspace_security_group_id" {
   description = "Security Group anexado aos ENIs do workspace Grafana (se vpc_configuration estiver habilitada)"
-  value       = var.vpc_id != null ? aws_security_group.workspace[0].id : null
+  value       = length(aws_security_group.workspace) > 0 ? aws_security_group.workspace[0].id : null
 }
