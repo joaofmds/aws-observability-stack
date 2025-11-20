@@ -38,7 +38,7 @@ module "adot" {
 }
 
 # ------------------------------------------------------------------------------
-# ALB Target Group & Listener Rule
+# Application Load Balancer
 # ------------------------------------------------------------------------------
 module "alb" {
   source = "./alb"
@@ -49,20 +49,52 @@ module "alb" {
   application  = var.application
   tags         = var.tags
 
-  listener_arn                     = var.listener_arn
-  priority                         = var.alb_priority
-  path_patterns                    = var.path_patterns
-  host_headers                     = var.host_headers
+  # ALB Creation
+  create_alb                       = var.create_alb
+  subnet_ids                       = var.create_alb ? var.alb_subnet_ids : []
+  alb_internal                     = var.alb_internal
+  allowed_cidr_blocks              = var.alb_allowed_cidr_blocks
+  enable_https                     = var.alb_enable_https
+  certificate_arn                  = var.alb_certificate_arn
+  ssl_policy                       = var.alb_ssl_policy
+  https_redirect                   = var.alb_https_redirect
+  enable_deletion_protection       = var.alb_enable_deletion_protection
+  enable_http2                     = var.alb_enable_http2
+  enable_cross_zone_load_balancing = var.alb_enable_cross_zone_load_balancing
+  idle_timeout                     = var.alb_idle_timeout
+  ip_address_type                  = var.alb_ip_address_type
+  access_logs_bucket               = var.alb_access_logs_bucket
+  access_logs_prefix               = var.alb_access_logs_prefix
+
+  # Listener Rule (for existing ALB)
+  listener_arn  = var.create_alb ? null : var.listener_arn
+  priority      = var.create_alb ? null : var.alb_priority
+  path_patterns = var.path_patterns
+  host_headers  = var.host_headers
+
+  # Target Group
+  port        = var.container_port
+  protocol    = var.alb_protocol
+  vpc_id      = var.vpc_id
+  target_type = var.target_type
+
+  # Health Check
+  health_check_enabled             = var.health_check_enabled
   health_check_path                = var.health_check_path
   health_check_interval            = var.health_check_interval
   health_check_timeout             = var.health_check_timeout
   health_check_healthy_threshold   = var.health_check_healthy_threshold
   health_check_unhealthy_threshold = var.health_check_unhealthy_threshold
   health_check_matcher             = var.health_check_matcher
-  port                             = var.container_port
-  protocol                         = var.alb_protocol
-  target_type                      = var.target_type
-  vpc_id                           = var.vpc_id
+  health_check_protocol            = var.health_check_protocol
+  health_check_port                = var.health_check_port
+
+  # Target Group Advanced
+  deregistration_delay = var.target_group_deregistration_delay
+  slow_start           = var.target_group_slow_start
+  enable_stickiness    = var.target_group_enable_stickiness
+  stickiness_type      = var.target_group_stickiness_type
+  cookie_duration      = var.target_group_cookie_duration
 }
 
 # ------------------------------------------------------------------------------
@@ -114,7 +146,7 @@ module "ecs" {
   container_name                = var.application
   container_port                = var.container_port
   vpc_id                        = var.vpc_id
-  alb_sg_id                     = var.alb_sg_id
+  alb_sg_id                     = var.create_alb ? module.alb.alb_security_group_id : var.alb_sg_id
   allowed_sg_ids                = var.allowed_sg_ids
   capacity_provider_strategy    = var.capacity_provider_strategy
   volumes                       = var.volumes
@@ -146,7 +178,7 @@ module "ecs" {
   loki_port                         = var.loki_port
   loki_tls                          = var.loki_tls
   loki_tenant_id                    = var.loki_tenant_id
-  s3_logs_bucket_name               = var.enable_firelens ? module.firelens.firelens_s3_bucket_name : var.s3_logs_bucket_name
+  s3_logs_bucket_name               = var.enable_firelens && module.firelens.firelens_s3_bucket_name != null ? module.firelens.firelens_s3_bucket_name : var.s3_logs_bucket_name
   s3_logs_prefix                    = var.s3_logs_prefix
   s3_logs_storage_class             = var.s3_logs_storage_class
   fluent_total_file_size            = var.fluent_total_file_size
@@ -163,8 +195,7 @@ module "ecs" {
   depends_on = [
     module.ecr,
     module.alb,
-    module.adot,
-    module.firelens
+    module.adot
   ]
 }
 
@@ -210,7 +241,22 @@ module "firelens" {
   loki_port                          = var.loki_port
   loki_tls                           = var.loki_tls
   loki_tenant_id                     = var.loki_tenant_id
-  task_role_name                     = local.task_role_name
+  task_role_arn                      = null
+}
+
+# ------------------------------------------------------------------------------
+# Attach FireLens policy to ECS task role (after both modules are created)
+# ------------------------------------------------------------------------------
+resource "aws_iam_role_policy_attachment" "firelens_task_role" {
+  count = var.enable_firelens ? 1 : 0
+
+  role       = module.ecs.task_role_arn
+  policy_arn = module.firelens.firelens_task_role_policy_arn
+
+  depends_on = [
+    module.ecs,
+    module.firelens
+  ]
 }
 
 # ------------------------------------------------------------------------------
