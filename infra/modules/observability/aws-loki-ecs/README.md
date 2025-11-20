@@ -61,7 +61,7 @@ No modules.
 | <a name="input_loki_image"></a> [loki\_image](#input\_loki\_image) | Imagem Docker do Loki | `string` | `"grafana/loki:3.1.0"` | no |
 | <a name="input_loki_memory"></a> [loki\_memory](#input\_loki\_memory) | Memória da task Fargate (em MiB, ex: 512, 1024, 2048) | `number` | `2048` | no |
 | <a name="input_loki_port"></a> [loki\_port](#input\_loki\_port) | Porta HTTP do Loki | `number` | `3100` | no |
-| <a name="input_name_prefix"></a> [name\_prefix](#input\_name\_prefix) | Prefixo para nomear recursos (ex: observability-o11y) | `string` | n/a | yes |
+| <a name="input_name_prefix"></a> [name\_prefix](#input\_name\_prefix) | Prefixo para nomear recursos (ex: observability-dev) | `string` | n/a | yes |
 | <a name="input_owner"></a> [owner](#input\_owner) | Time responsável pelo recurso | `string` | n/a | yes |
 | <a name="input_private_subnet_ids"></a> [private\_subnet\_ids](#input\_private\_subnet\_ids) | Lista de subnets privadas para o serviço ECS Fargate | `list(string)` | n/a | yes |
 | <a name="input_project_name"></a> [project\_name](#input\_project\_name) | Nome do projeto para prefixar recursos. | `string` | n/a | yes |

@@ -132,9 +132,9 @@ variable "enable_loki" {
 }
 
 variable "loki_name_prefix" {
-  description = "Prefixo para nomear recursos do Loki (ex: observability-o11y)"
+  description = "Prefixo para nomear recursos do Loki (ex: observability-dev)"
   type        = string
-  default     = "observability-o11y"
+  default     = "observability-dev"
 }
 
 variable "loki_vpc_id" {

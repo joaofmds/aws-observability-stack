@@ -1,5 +1,5 @@
 variable "name_prefix" {
-  description = "Prefixo para nomear recursos (ex: observability-o11y)"
+  description = "Prefixo para nomear recursos (ex: observability-dev)"
   type        = string
 }
 
