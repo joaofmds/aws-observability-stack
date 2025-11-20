@@ -7,7 +7,6 @@ Prova de Conceito (POC) de uma stack completa de observabilidade na AWS, demonst
 Este projeto implementa uma arquitetura de observabilidade moderna e escalável, utilizando:
 
 - **Amazon Managed Prometheus (AMP)** para métricas
-- **AWS X-Ray** para traces distribuídos
 - **Amazon Managed Grafana** para visualização unificada
 - **Loki** (self-hosted no ECS) para agregação de logs
 - **AWS Distro for OpenTelemetry (ADOT)** como coletor de telemetria
@@ -44,7 +43,6 @@ Módulo Terraform modularizado que facilita o deploy de aplicações ECS com obs
   - Sidecar container que coleta métricas e traces
   - Recebe telemetria via OTLP (ports 4317/4318)
   - Envia métricas para AMP (Remote Write)
-  - Envia traces para AWS X-Ray
   - Configuração via template YAML
 
 - **`ecs/`** - ECS Service e Task Definition
@@ -95,7 +93,7 @@ Módulo Terraform modularizado que facilita o deploy de aplicações ECS com obs
 
 - **`aws-grafana/`** - Amazon Managed Grafana
   - Workspace gerenciado
-  - Data sources: CloudWatch, X-Ray, Prometheus
+  - Data sources: CloudWatch e Prometheus
   - Autenticação via AWS SSO
   - IAM Role para acesso aos serviços AWS
 
@@ -123,17 +121,6 @@ ADOT Collector (recebe OTLP)
 Amazon Managed Prometheus (Remote Write)
     ↓
 Grafana (Prometheus Data Source)
-```
-
-### Traces
-```
-Aplicação (OTLP)
-    ↓
-ADOT Collector (recebe OTLP)
-    ↓
-AWS X-Ray
-    ↓
-Grafana (X-Ray Data Source)
 ```
 
 ## 🚀 Quick Start
@@ -269,11 +256,6 @@ O projeto suporta acesso cross-account via:
 - Logs do ADOT Collector
 - Logs do Loki
 
-### Traces Disponíveis
-- Traces distribuídos via X-Ray
-- Service map
-- Análise de performance
-
 ## 🛠️ Tecnologias Utilizadas
 
 ### AWS Services
@@ -281,7 +263,6 @@ O projeto suporta acesso cross-account via:
 - **Application Load Balancer** - Load balancing
 - **ECR** - Container registry
 - **CloudWatch** - Logs e métricas básicas
-- **X-Ray** - Distributed tracing
 - **Amazon Managed Prometheus** - Métricas escaláveis
 - **Amazon Managed Grafana** - Visualização
 - **Secrets Manager** - Gerenciamento de secrets
@@ -317,7 +298,6 @@ Principais:
 - `environment` - Ambiente de implantação
 - `application` - Nome da aplicação
 - `region` - Região AWS
-- `enable_traces` - Habilitar traces (X-Ray)
 - `enable_metrics` - Habilitar métricas (AMP)
 - `enable_firelens` - Habilitar FireLens para logs
 

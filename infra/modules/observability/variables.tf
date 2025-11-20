@@ -56,7 +56,7 @@ variable "prometheus_alias" {
 variable "grafana_enabled_data_sources" {
   description = "Lista de fontes de dados a habilitar no Grafana"
   type        = list(string)
-  default     = ["CLOUDWATCH", "XRAY"]
+  default     = ["CLOUDWATCH", "PROMETHEUS"]
 }
 
 variable "grafana_authentication_providers" {
@@ -112,14 +112,13 @@ variable "grafana_managed_policy_arns" {
 Lista de ARNs de políticas gerenciadas para anexar à role do Grafana.
 Políticas recomendadas por datasource:
 - CLOUDWATCH: CloudWatchReadOnlyAccess
-- XRAY: AWSXRayReadOnlyAccess
-- PROMETHEUS: AmazonPrometheusReadOnlyAccess
+- PROMETHEUS: AmazonPrometheusQueryAccess
 - LOKI: (geralmente não precisa de política, acessa via VPC/PrivateLink)
 EOF
   type        = list(string)
   default = [
     "arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess",
-    "arn:aws:iam::aws:policy/AWSXRayReadOnlyAccess"
+    "arn:aws:iam::aws:policy/AmazonPrometheusQueryAccess"
   ]
 }
 

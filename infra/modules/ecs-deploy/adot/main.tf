@@ -4,7 +4,6 @@ resource "local_file" "adot_config" {
     region               = var.region
     assume_role_arn      = var.assume_role_arn
     amp_remote_write_url = var.amp_remote_write_url
-    enable_traces        = var.enable_traces
     enable_metrics       = var.enable_metrics
     project_name         = var.application
     environment          = var.environment

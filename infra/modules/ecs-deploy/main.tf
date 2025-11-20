@@ -188,7 +188,6 @@ module "adot" {
   image                 = var.adot_image
   adot_cpu              = var.adot_cpu
   adot_memory           = var.adot_memory
-  enable_traces         = var.enable_traces
   enable_metrics        = var.enable_metrics
   environment_variables = var.adot_environment_variables
   container_name        = var.adot_container_name

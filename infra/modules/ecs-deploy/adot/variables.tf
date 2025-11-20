@@ -72,12 +72,6 @@ variable "adot_memory" {
   default     = 256
 }
 
-variable "enable_traces" {
-  description = "Habilita pipeline de traces com AWS X-Ray"
-  type        = bool
-  default     = true
-}
-
 variable "enable_metrics" {
   description = "Habilita pipeline de métricas com AMP"
   type        = bool

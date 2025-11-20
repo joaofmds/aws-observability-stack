@@ -1,11 +1,11 @@
 # Data sources
-data "terraform_remote_state" "core_infra" {
+data "terraform_remote_state" "network" {
   backend = "s3"
   config = {
-    bucket         = "wiiascend-tfstate-o11y"
-    key            = "core-infra/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "terraform-locks"
+    bucket       = "r10score-terraform-state-dev"
+    key          = "network/dev/terraform.tfstate"
+    region       = "us-east-1"
+    use_lockfile = true
   }
 }
 
@@ -26,15 +26,15 @@ module "observability" {
   prometheus_alias = "central-prometheus"
 
   # Grafana Configuration
-  grafana_enabled_data_sources     = ["CLOUDWATCH", "XRAY", "PROMETHEUS"]
+  grafana_enabled_data_sources     = ["CLOUDWATCH", "PROMETHEUS"]
   grafana_authentication_providers = ["AWS_SSO"]
   grafana_account_access_type      = "CURRENT_ACCOUNT"
   grafana_alerting_enabled         = true
   grafana_enable_plugin_management = true
-  grafana_vpc_id                   = data.terraform_remote_state.core_infra.outputs.vpc_id
-  grafana_vpc_subnet_ids           = data.terraform_remote_state.core_infra.outputs.private_subnet_ids
+  grafana_vpc_id                   = data.terraform_remote_state.network.outputs.vpc_id
+  grafana_vpc_subnet_ids           = data.terraform_remote_state.network.outputs.private_subnet_ids
 
-  # Custom Grafana IAM Policy (includes Prometheus, CloudWatch, X-Ray, SNS, SES)
+  # Custom Grafana IAM Policy (includes Prometheus, CloudWatch, SNS, SES)
   grafana_custom_policy_json = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -75,17 +75,6 @@ module "observability" {
         Resource = "*"
       },
       {
-        Sid    = "AllowXrayAccess"
-        Effect = "Allow"
-        Action = [
-          "xray:GetTraceSummaries",
-          "xray:GetServiceGraph",
-          "xray:BatchGetTraces",
-          "xray:GetTraceGraph"
-        ]
-        Resource = "*"
-      },
-      {
         Sid      = "AllowSelfAssumeRole"
         Effect   = "Allow"
         Action   = "sts:AssumeRole"
@@ -111,10 +100,10 @@ module "observability" {
 
   # Loki Configuration
   enable_loki                        = var.enable_loki
-  loki_name_prefix                   = "o11y"
-  loki_vpc_id                        = data.terraform_remote_state.core_infra.outputs.vpc_id
-  loki_private_subnet_ids            = data.terraform_remote_state.core_infra.outputs.private_subnet_ids
-  loki_ecs_cluster_name              = "o11y-loki-cluster"
+  loki_name_prefix                   = "dev"
+  loki_vpc_id                        = data.terraform_remote_state.network.outputs.vpc_id
+  loki_private_subnet_ids            = data.terraform_remote_state.network.outputs.private_subnet_ids
+  loki_ecs_cluster_name              = "dev-loki-cluster"
   loki_desired_count                 = 1
   loki_retention_days                = 30
   loki_cloudwatch_log_retention_days = 3
