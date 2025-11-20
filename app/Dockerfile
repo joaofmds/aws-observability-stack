@@ -5,10 +5,11 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copiar arquivos de dependências
-COPY app/package.json app/package-lock.json* ./
+COPY app/package.json ./
 
 # Instalar dependências de produção
-RUN npm ci --only=production && npm cache clean --force
+# Usa npm install pois pode não haver package-lock.json
+RUN npm install --omit=dev && npm cache clean --force
 
 # Stage 2: Runtime image
 FROM node:20-alpine
