@@ -144,13 +144,8 @@ resource "aws_iam_policy" "firelens_task_role" {
   policy      = data.aws_iam_policy_document.firelens_task_role[0].json
 }
 
-data "aws_iam_role" "task_role" {
-  count = var.enable_firelens ? 1 : 0
-  name  = var.task_role_name
-}
-
 resource "aws_iam_role_policy_attachment" "firelens_task_role" {
-  count      = var.enable_firelens ? 1 : 0
-  role       = data.aws_iam_role.task_role[0].name
+  count      = var.enable_firelens && var.task_role_arn != null ? 1 : 0
+  role       = var.task_role_arn
   policy_arn = aws_iam_policy.firelens_task_role[0].arn
 }

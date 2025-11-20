@@ -219,7 +219,8 @@ variable "loki_tenant_id" {
   default     = null
 }
 
-variable "task_role_name" {
-  description = "Nome da IAM Role da Task ECS que receberá as permissões do FireLens"
+variable "task_role_arn" {
+  description = "ARN da IAM Role da Task ECS que receberá as permissões do FireLens"
   type        = string
+  default     = null
 }
