@@ -17,6 +17,54 @@ resource "aws_ecs_cluster" "this" {
 }
 
 # ------------------------------------------------------------------------------
+# IAM Role for ECS Task
+# ------------------------------------------------------------------------------
+resource "aws_iam_role" "task" {
+  count = var.task_role_arn == null ? 1 : 0
+  name  = local.task_role_name
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = merge(local.common_tags, {
+    Name = local.task_role_name
+  })
+}
+
+resource "aws_iam_policy" "task_custom" {
+  count       = var.task_role_arn == null && var.task_role_policy_json != null ? 1 : 0
+  name        = local.task_policy_name
+  description = "Política customizada para a task ECS ${var.application}"
+  policy      = var.task_role_policy_json
+
+  tags = merge(local.common_tags, {
+    Name = local.task_policy_name
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "task_custom" {
+  count      = var.task_role_arn == null && var.task_role_policy_json != null ? 1 : 0
+  role       = aws_iam_role.task[0].name
+  policy_arn = aws_iam_policy.task_custom[0].arn
+}
+
+resource "aws_iam_role_policy_attachment" "task_managed" {
+  for_each   = var.task_role_arn == null ? toset(var.task_role_managed_policy_arns) : []
+  role       = aws_iam_role.task[0].name
+  policy_arn = each.value
+}
+
+# ------------------------------------------------------------------------------
 # ECS Service
 # ------------------------------------------------------------------------------
 resource "aws_ecs_service" "this" {
@@ -43,7 +91,7 @@ resource "aws_ecs_service" "this" {
   enable_execute_command = true
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.this.arn
+    target_group_arn = var.alb_target_group_arn
     container_name   = var.application
     container_port   = var.container_port
   }
@@ -64,7 +112,7 @@ resource "aws_ecs_task_definition" "this" {
   cpu                      = var.task_cpu
   memory                   = var.task_memory
   execution_role_arn       = var.execution_role_arn
-  task_role_arn            = aws_iam_role.this.arn
+  task_role_arn            = var.task_role_arn != null ? var.task_role_arn : aws_iam_role.task[0].arn
 
   container_definitions = jsonencode(local.ecs_task_containers)
 
@@ -134,7 +182,7 @@ resource "aws_appautoscaling_policy" "requests_scaling" {
 
       dimensions {
         name  = "TargetGroup"
-        value = split(":", aws_lb_target_group.this.arn)[5]
+        value = split(":", var.alb_target_group_arn)[5]
       }
 
       dimensions {

@@ -91,6 +91,18 @@ variable "task_role_arn" {
   default     = null
 }
 
+variable "task_role_policy_json" {
+  description = "Política IAM (JSON) adicional para a task role criada pelo módulo."
+  type        = string
+  default     = null
+}
+
+variable "task_role_managed_policy_arns" {
+  description = "Lista de ARNs de políticas gerenciadas para anexar à task role criada."
+  type        = list(string)
+  default     = []
+}
+
 variable "desired_count" {
   type        = number
   description = "Número de instâncias desejadas."
@@ -133,11 +145,6 @@ variable "allowed_sg_ids" {
   type        = list(string)
   description = "Lista de security groups que podem acessar o ECS"
   default     = []
-}
-
-variable "ecs_execution_role_name" {
-  description = "Nome do ECS Execution Role"
-  type        = string
 }
 
 variable "capacity_provider_strategy" {
@@ -361,4 +368,14 @@ variable "adot_container_definition_json" {
   description = "JSON do container definition do ADOT (vindo do módulo ADOT)"
   type        = string
   default     = null
+}
+
+variable "ecr_repository_url" {
+  description = "URL do repositório ECR da aplicação."
+  type        = string
+}
+
+variable "alb_target_group_arn" {
+  description = "ARN do Target Group do ALB para o ECS Service."
+  type        = string
 }

@@ -37,3 +37,13 @@ output "cluster_arn" {
   description = "ARN do ECS Cluster (criado ou existente)"
   value       = var.create_cluster ? aws_ecs_cluster.this[0].arn : null
 }
+
+output "task_role_name" {
+  description = "Nome da IAM Role associada às tasks ECS"
+  value       = var.task_role_arn == null ? aws_iam_role.task[0].name : replace(var.task_role_arn, "arn:aws:iam::[0-9]+:role/", "")
+}
+
+output "task_role_arn" {
+  description = "ARN da IAM Role associada às tasks ECS"
+  value       = var.task_role_arn != null ? var.task_role_arn : aws_iam_role.task[0].arn
+}

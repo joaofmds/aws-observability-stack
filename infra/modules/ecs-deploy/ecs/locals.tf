@@ -56,7 +56,7 @@ locals {
 
   app_container_definition = merge({
     name      = var.application
-    image     = "${aws_ecr_repository.this.repository_url}:latest"
+    image     = "${var.ecr_repository_url}:latest"
     cpu       = var.container_cpu
     memory    = var.container_memory
     essential = true
@@ -128,5 +128,7 @@ locals {
   security_group_name  = "${var.application}-ecs-sg-${var.environment}"
   cluster_name         = var.cluster_name != null ? var.cluster_name : "${var.application}-ecs-cluster-${var.environment}"
   cluster_id           = var.create_cluster ? aws_ecs_cluster.this[0].id : var.cluster_id
+  task_role_name       = "${var.application}-ecs-task-role-${var.environment}"
+  task_policy_name     = "${var.application}-ecs-task-policy-${var.environment}"
 }
 
