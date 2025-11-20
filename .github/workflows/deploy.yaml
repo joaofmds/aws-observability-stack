@@ -17,7 +17,6 @@ permissions:
 jobs:
   ci:
     name: CI - Test and Build
-    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -51,7 +50,6 @@ jobs:
     if: success() && github.event_name == 'push'
     name: CI Docker
     needs: ci
-    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.image-tag.outputs.image_tag }}
@@ -63,7 +61,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ github.ref == 'refs/heads/main' && secrets.AWS_OIDC_PRD || secrets.AWS_OIDC_DEV }}
+          role-to-assume: ${{ secrets.AWS_OIDC }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
@@ -97,7 +95,6 @@ jobs:
   cd:
     name: CD Docker
     needs: ci_docker
-    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -106,7 +103,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ github.ref == 'refs/heads/main' && secrets.AWS_OIDC_PRD || secrets.AWS_OIDC_DEV }}
+          role-to-assume: ${{ secrets.AWS_OIDC }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
@@ -131,5 +128,5 @@ jobs:
         with:
           task-definition: ${{ steps.render-task.outputs.task-definition }}
           service: ${{ secrets.ECS_SERVICE }}
-          cluster: ${{ github.ref == 'refs/heads/main' && secrets.ECS_CLUSTER_PRD || secrets.ECS_CLUSTER_DEV }}
+          cluster: ${{ secrets.ECS_CLUSTER }}
           wait-for-service-stability: true
