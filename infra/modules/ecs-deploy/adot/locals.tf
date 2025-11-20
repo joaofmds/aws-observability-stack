@@ -1,4 +1,19 @@
 locals {
+  common_tags = merge(var.tags, {
+    Environment = var.environment
+    Project     = var.project_name
+    Owner       = var.owner
+    Application = var.application
+  })
+
+  assume_role_principals = length(var.assume_role_principals) > 0 ? var.assume_role_principals : [
+    "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+  ]
+
+  remote_write_role_name   = "${var.application}-adot-remote-write-${var.environment}"
+  remote_write_policy_name = "${var.application}-adot-remote-write-policy-${var.environment}"
+  remote_write_resources   = var.amp_workspace_arn != null ? [var.amp_workspace_arn] : ["*"]
+
   cloudwatch_log_group_name = coalesce(var.log_group, "/ecs/${var.application}-${var.environment}")
 
   adot_log_configuration = {

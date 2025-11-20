@@ -87,13 +87,20 @@ variable "environment_variables" {
   default = []
 }
 
-variable "assume_role_arn" {
-  description = "ARN da role que o ADOT Collector deve assumir para enviar métricas para o AMP"
-  type        = string
-}
-
 variable "container_name" {
   description = "Nome do container ADOT. Se não informado, será usado o padrão baseado no nome da aplicação com sufixo '-adot'"
   type        = string
   default     = null
+}
+
+variable "amp_workspace_arn" {
+  description = "ARN do workspace AMP utilizado para limitar a política IAM de remote write"
+  type        = string
+  default     = null
+}
+
+variable "assume_role_principals" {
+  description = "Lista de ARNs que podem assumir a role de remote write (ex: task role do ECS). Se vazio, usa a própria conta."
+  type        = list(string)
+  default     = []
 }
