@@ -125,6 +125,16 @@ output "loki_vpc_endpoint_service_name" {
   value       = var.enable_loki ? module.loki[0].loki_vpc_endpoint_service_name : null
 }
 
+output "loki_host" {
+  description = "Host (DNS) do Loki NLB (se aplicável)"
+  value       = var.enable_loki ? module.loki[0].loki_nlb_dns_name : null
+}
+
+output "loki_port" {
+  description = "Porta HTTP do Loki (se aplicável)"
+  value       = var.enable_loki ? var.loki_port : null
+}
+
 # =============================================================================
 # Common Outputs
 # =============================================================================
