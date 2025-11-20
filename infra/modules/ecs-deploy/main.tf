@@ -265,12 +265,17 @@ resource "aws_iam_role_policy_attachment" "firelens_task_role" {
 # ------------------------------------------------------------------------------
 # Allow ECS Security Group to access Loki Security Group
 # ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Allow ECS Security Group to access Loki Security Group
+# Criado apenas se enable_loki estiver habilitado
+# O security_group_id será definido após o módulo observability ser criado
+# ------------------------------------------------------------------------------
 resource "aws_security_group_rule" "loki_ingress_from_ecs" {
-  count = var.enable_loki && var.loki_security_group_id != null && var.loki_port != null ? 1 : 0
+  count = var.enable_loki ? 1 : 0
 
   type                     = "ingress"
-  from_port                = var.loki_port
-  to_port                  = var.loki_port
+  from_port                = var.loki_port != null ? var.loki_port : 3100
+  to_port                  = var.loki_port != null ? var.loki_port : 3100
   protocol                 = "tcp"
   source_security_group_id = module.ecs.ecs_sg_id
   security_group_id        = var.loki_security_group_id
