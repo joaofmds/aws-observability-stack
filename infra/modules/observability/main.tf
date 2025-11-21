@@ -149,9 +149,14 @@ resource "aws_security_group_rule" "loki_ingress_from_grafana" {
 # ------------------------------------------------------------------------------
 # Allow additional external Security Groups to access Loki Security Group
 # (For Security Groups created after Loki, like ECS tasks)
+# Excludes Security Groups already in loki_allowed_security_group_ids to avoid duplicates
 # ------------------------------------------------------------------------------
 resource "aws_security_group_rule" "loki_ingress_from_additional_sgs" {
-  for_each = var.enable_loki && length(var.loki_additional_security_group_ids) > 0 ? toset([for sg_id in var.loki_additional_security_group_ids : sg_id if sg_id != null && sg_id != ""]) : toset([])
+  for_each = var.enable_loki && length(var.loki_additional_security_group_ids) > 0 ? toset([
+    for sg_id in var.loki_additional_security_group_ids
+    : sg_id
+    if sg_id != null && sg_id != "" && !contains(var.loki_allowed_security_group_ids, sg_id)
+  ]) : toset([])
 
   type                     = "ingress"
   from_port                = var.loki_port
