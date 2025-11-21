@@ -238,3 +238,28 @@ module "ecs_deploy" {
   secret_string        = var.secret_string
   secret_kms_key_id    = var.secret_kms_key_id
 }
+
+# ------------------------------------------------------------------------------
+# Allow ECS Security Group to access Loki Security Group
+# (Explicit rule to ensure connectivity between ECS and Loki)
+# ------------------------------------------------------------------------------
+resource "aws_security_group_rule" "loki_ingress_from_ecs" {
+  count = var.enable_loki ? 1 : 0
+
+  type                     = "ingress"
+  from_port                = 3100
+  to_port                  = 3100
+  protocol                 = "tcp"
+  source_security_group_id = module.ecs_deploy.ecs_sg_id
+  security_group_id        = module.observability.loki_task_security_group_id
+  description              = "Allow ECS tasks to access Loki via NLB"
+
+  depends_on = [
+    module.ecs_deploy,
+    module.observability
+  ]
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
