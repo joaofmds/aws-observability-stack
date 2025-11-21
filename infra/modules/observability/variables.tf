@@ -234,6 +234,12 @@ variable "loki_allowed_security_group_ids" {
   default     = []
 }
 
+variable "loki_additional_security_group_ids" {
+  description = "Security groups externos adicionais que podem acessar o Loki (criados após o módulo Loki, ex: ECS). Estes serão adicionados via regras separadas."
+  type        = list(string)
+  default     = []
+}
+
 variable "loki_capacity_provider_strategies" {
   description = <<EOF
 Lista de estratégias de capacity provider para o serviço ECS do Loki.

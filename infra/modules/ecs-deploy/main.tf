@@ -266,31 +266,6 @@ resource "aws_iam_role_policy_attachment" "firelens_task_role" {
 # Allow ECS Security Group to access Loki Security Group
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-# Allow ECS Security Group to access Loki Security Group
-# Criado apenas se enable_loki estiver habilitado
-# O security_group_id será definido após o módulo observability ser criado
-# ------------------------------------------------------------------------------
-resource "aws_security_group_rule" "loki_ingress_from_ecs" {
-  count = var.enable_loki ? 1 : 0
-
-  type                     = "ingress"
-  from_port                = var.loki_port != null ? var.loki_port : 3100
-  to_port                  = var.loki_port != null ? var.loki_port : 3100
-  protocol                 = "tcp"
-  source_security_group_id = module.ecs.ecs_sg_id
-  security_group_id        = var.loki_security_group_id
-  description              = "Allow ECS tasks to access Loki"
-
-  depends_on = [
-    module.ecs
-  ]
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-# ------------------------------------------------------------------------------
 # Update ADOT remote write role assume policy to include ECS task role
 # Replace the role to update assume_role_policy with task role included
 # ------------------------------------------------------------------------------

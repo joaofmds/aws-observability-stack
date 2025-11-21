@@ -146,3 +146,27 @@ resource "aws_security_group_rule" "loki_ingress_from_grafana" {
   }
 }
 
+# ------------------------------------------------------------------------------
+# Allow additional external Security Groups to access Loki Security Group
+# (For Security Groups created after Loki, like ECS tasks)
+# ------------------------------------------------------------------------------
+resource "aws_security_group_rule" "loki_ingress_from_additional_sgs" {
+  for_each = var.enable_loki && length(var.loki_additional_security_group_ids) > 0 ? toset([for sg_id in var.loki_additional_security_group_ids : sg_id if sg_id != null && sg_id != ""]) : toset([])
+
+  type                     = "ingress"
+  from_port                = var.loki_port
+  to_port                  = var.loki_port
+  protocol                 = "tcp"
+  source_security_group_id = each.value
+  security_group_id        = module.loki[0].loki_task_security_group_id
+  description              = "Allow external security group to access Loki via NLB"
+
+  depends_on = [
+    module.loki
+  ]
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
