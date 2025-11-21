@@ -150,6 +150,66 @@ terraform plan
 terraform apply
 ```
 
+### Obter Endpoints da Aplicação
+
+Após o deploy, use o script para listar todos os endpoints:
+
+```bash
+./scripts/get-endpoints.sh
+```
+
+Ou consulte diretamente os outputs do Terraform:
+
+```bash
+cd infra/envs/dev
+
+# ALB DNS
+terraform output alb_dns_name
+
+# Grafana Workspace URL
+terraform output grafana_workspace_url
+
+# Loki Endpoint (interno VPC)
+terraform output loki_endpoint_http
+
+# Prometheus Endpoints
+terraform output prometheus_query_endpoint
+terraform output prometheus_remote_write_endpoint
+```
+
+### Testar Endpoints
+
+#### Aplicação Principal (ALB)
+```bash
+# Health check
+curl http://$(terraform output -raw alb_dns_name)/
+
+# Iniciar geração de logs
+curl http://$(terraform output -raw alb_dns_name)/start?rate=1000
+
+# Status
+curl http://$(terraform output -raw alb_dns_name)/status
+
+# Parar geração
+curl http://$(terraform output -raw alb_dns_name)/stop
+```
+
+#### Loki (dentro da VPC)
+```bash
+# Health check (requer acesso à VPC)
+curl http://$(terraform output -raw loki_nlb_dns_name):3100/ready
+
+# Query API
+curl http://$(terraform output -raw loki_nlb_dns_name):3100/loki/api/v1/labels
+```
+
+**Nota**: O Loki é acessível apenas dentro da VPC. Para testar de fora, use uma instância EC2 na mesma VPC ou configure um bastion host.
+
+#### Grafana
+1. Acesse a URL retornada por `terraform output grafana_workspace_url`
+2. Faça login via AWS SSO
+3. Configure os data sources (Prometheus e CloudWatch Logs)
+
 ### Executar a Aplicação Localmente
 
 1. **Instale as dependências:**
@@ -189,34 +249,42 @@ curl "http://localhost:3000/stop"
 │   ├── app.js                   # Aplicação principal
 │   ├── logger.js                # Configuração do logger Pino
 │   ├── package.json             # Dependências Node.js
+│   ├── Dockerfile               # Imagem Docker da aplicação
 │   └── README.md                # Documentação da aplicação
 │
 ├── infra/                        # Infraestrutura Terraform
 │   ├── envs/                    # Ambientes (dev, staging, prod)
 │   │   └── dev/
+│   │       ├── backend.tf       # Configuração do backend Terraform
 │   │       ├── main.tf          # Módulos principais
 │   │       ├── variables.tf     # Variáveis do ambiente
 │   │       ├── outputs.tf       # Outputs do ambiente
 │   │       └── terraform.tfvars # Valores das variáveis
 │   │
 │   └── modules/                 # Módulos Terraform reutilizáveis
+│       ├── vpc/                 # Módulo VPC
 │       ├── ecs-deploy/          # Módulo completo de deploy ECS
 │       │   ├── adot/            # Módulo ADOT
 │       │   ├── alb/             # Módulo ALB
 │       │   ├── ecr/             # Módulo ECR
 │       │   ├── ecs/             # Módulo ECS
 │       │   ├── firelens/        # Módulo FireLens
-│       │   ├── iam/             # Módulo IAM
 │       │   ├── secrets-manager/ # Módulo Secrets Manager
 │       │   ├── variables.tf     # Variáveis do módulo
 │       │   ├── versions.tf      # Versões dos providers
-│       │   └── data.tf          # Data sources
+│       │   └── outputs.tf       # Outputs do módulo
 │       │
 │       └── observability/       # Módulos de observabilidade
 │           ├── aws-grafana/     # Módulo Grafana
 │           ├── aws-loki-ecs/    # Módulo Loki
 │           ├── aws-prometheus/  # Módulo Prometheus
-│           └── aws-iam-role/    # Módulo IAM Role reutilizável
+│           ├── aws-iam-role/    # Módulo IAM Role reutilizável
+│           ├── main.tf          # Módulo principal de observabilidade
+│           ├── variables.tf     # Variáveis do módulo
+│           └── outputs.tf       # Outputs do módulo
+│
+├── scripts/                      # Scripts utilitários
+│   └── get-endpoints.sh         # Script para listar endpoints
 │
 └── README.md                     # Este arquivo
 ```
@@ -315,14 +383,68 @@ Principais:
 - **Retenção configurável** de logs
 - **Compressão** de logs no S3
 
+## 🔧 Troubleshooting
+
+### Problemas Comuns
+
+#### Loki Health Check Failing
+Se os targets do Loki NLB estiverem unhealthy:
+
+1. **Verificar conectividade de rede:**
+   ```bash
+   # Teste de dentro da VPC
+   curl http://$(terraform output -raw loki_nlb_dns_name):3100/ready
+   ```
+
+2. **Verificar logs do Loki:**
+   ```bash
+   aws logs tail $(terraform output -raw loki_cloudwatch_log_group_name) --follow
+   ```
+
+3. **Verificar Security Groups:**
+   - O Security Group do ECS deve ter permissão para acessar o Security Group do Loki na porta 3100
+   - O Security Group do Loki deve permitir tráfego do CIDR da VPC (10.0.0.0/16)
+
+#### Dependências Circulares no Terraform
+Se você encontrar erros de dependência circular:
+
+- A regra de Security Group do Loki está em `infra/envs/dev/main.tf` para evitar dependências circulares
+- O `task_role_arn` do ADOT é passado como `null` inicialmente para quebrar ciclos de dependência
+
+### Scripts Úteis
+
+#### Listar Todos os Endpoints
+```bash
+./scripts/get-endpoints.sh
+```
+
+#### Ver Status do Serviço ECS
+```bash
+aws ecs describe-services \
+  --cluster $(cd infra/envs/dev && terraform output -raw ecs_cluster_name) \
+  --services $(cd infra/envs/dev && terraform output -raw ecs_service_name) \
+  --region us-east-1
+```
+
+#### Ver Logs do Loki
+```bash
+aws logs tail $(cd infra/envs/dev && terraform output -raw loki_cloudwatch_log_group_name) \
+  --follow \
+  --region us-east-1
+```
+
 ## 📝 Refatoração Recente
 
-O projeto foi recentemente refatorado para melhorar a organização:
+O projeto foi recentemente refatorado para melhorar a organização e resolver problemas:
 
 - ✅ Locals movidos para módulos específicos
 - ✅ Cada submódulo possui seu próprio `locals.tf`
 - ✅ Padrão consistente de `common_tags` em todos os módulos
 - ✅ Nomenclatura padronizada via locals
+- ✅ Dependências circulares resolvidas (Security Groups, IAM Roles)
+- ✅ Health checks do Loki ajustados (TCP temporário para validação de rede)
+- ✅ Configuração do Loki para escutar em 0.0.0.0:3100 (IPv4 e IPv6)
+- ✅ Script utilitário para listar endpoints (`scripts/get-endpoints.sh`)
 
 ## 🤝 Contribuindo
 
@@ -345,6 +467,24 @@ DevOps Team - Grupo OTG
 - [Amazon Managed Grafana](https://docs.aws.amazon.com/grafana/)
 - [Loki Documentation](https://grafana.com/docs/loki/latest/)
 - [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
+- [Pino Logger](https://getpino.io/)
+
+## 📊 Monitoramento e Observabilidade
+
+### Health Checks
+
+- **Aplicação**: `GET /` ou `GET /status`
+- **Loki**: `GET /ready` na porta 3100
+- **ECS**: Health checks configurados automaticamente
+
+### Dashboards no Grafana
+
+Após configurar os data sources no Grafana, você pode criar dashboards para:
+
+- **Métricas da Aplicação**: Via Prometheus (ADOT)
+- **Logs da Aplicação**: Via CloudWatch Logs Insights ou Loki
+- **Métricas de Infraestrutura**: CPU, memória, requisições do ECS
+- **Métricas de Load Balancer**: Requisições, latência, erros
 
 ---
 
