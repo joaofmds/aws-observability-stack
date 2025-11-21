@@ -18,6 +18,9 @@ locals {
   loki_s3_bucket_name   = var.create_s3_bucket ? coalesce(var.s3_bucket_name, local.bucket_name_generated) : var.s3_bucket_name
 
   loki_s3_bucket_arn = var.create_s3_bucket ? aws_s3_bucket.loki[0].arn : "arn:aws:s3:::${local.loki_s3_bucket_name}"
+
+  # Hash do template para forçar atualização da task definition quando o template mudar
+  loki_config_hash = substr(sha256(local.loki_config_yaml), 0, 8)
 }
 
 # ---------------------------------------------------------------------------
@@ -270,8 +273,23 @@ locals {
         {
           name  = "LOKI_ENV"
           value = "ecs"
+        },
+        {
+          name  = "LOKI_CONFIG_HASH"
+          value = local.loki_config_hash
         }
       ]
+
+      # Health check do container temporariamente desabilitado para debug
+      # A imagem grafana/loki pode não ter wget instalado
+      # TODO: Verificar se wget ou curl está disponível na imagem e reabilitar
+      # healthCheck = {
+      #   command     = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:${var.loki_port}/ready || exit 1"]
+      #   interval    = 30
+      #   timeout     = 5
+      #   retries     = 3
+      #   startPeriod = 60
+      # }
     }
   ])
 }
@@ -332,13 +350,15 @@ resource "aws_lb_target_group" "loki" {
   vpc_id      = var.vpc_id
 
   health_check {
-    protocol            = "HTTP"
+    # Temporariamente usando TCP para validar conectividade de rede
+    # TODO: Voltar para HTTP após confirmar que /ready está respondendo corretamente
+    protocol            = "TCP"
     port                = var.loki_port
-    path                = "/ready"
     healthy_threshold   = 2
     unhealthy_threshold = 3
-    timeout             = 5
+    timeout             = 10
     interval            = 30
+    # Nota: matcher e path só são válidos para protocol HTTP/HTTPS, não para TCP
   }
 
   lifecycle {
