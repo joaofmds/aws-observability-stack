@@ -1,48 +1,48 @@
-# POC Logs Backend
+# Backend POC Logs
 
-Simple Node.js backend that generates many logs for observability/load testing proof-of-concept.
+Backend simples em Node.js que gera muitos logs para provas de conceito de observabilidade e testes de carga.
 
-Quick start
+Início rápido
 
-1. Install dependencies:
+1. Instale as dependências:
 
 ```bash
 npm install
 ```
 
-2. Run the app:
+2. Execute o aplicativo:
 
 ```bash
 npm start
 ```
 
-3. Control the log generator:
+3. Controle o gerador de logs:
 
-- Start generator with `rate` logs per second (default 1000):
+- Inicie o gerador com `rate` logs por segundo (padrão 1000):
 
 ```bash
 curl "http://localhost:3000/start?rate=2000"
 ```
 
-- Stop generator:
+- Pare o gerador:
 
 ```bash
 curl "http://localhost:3000/stop"
 ```
 
-- Status:
+- Consulte o status:
 
 ```bash
 curl "http://localhost:3000/status"
 ```
 
-- Generate a burst of logs (single request):
+- Gere uma explosão de logs (requisição única):
 
 ```bash
 curl "http://localhost:3000/burst?count=50000"
 ```
 
-Notes
+Notas
 
-- By default logs are output to stdout. To write logs to a file set `PINO_LOG_FILE` environment variable before starting the app, e.g. `PINO_LOG_FILE=logs/out.log npm start`.
-- High log rates can saturate CPU and I/O; tune `rate` according to your environment.
+- Por padrão os logs são enviados para stdout. Para escrevê-los em arquivo defina a variável de ambiente `PINO_LOG_FILE` antes de iniciar o app, por exemplo `PINO_LOG_FILE=logs/out.log npm start`.
+- Taxas muito altas de logs podem saturar CPU e I/O; ajuste o `rate` conforme seu ambiente.
