@@ -1,6 +1,3 @@
-# =============================================================================
-# VPC
-# =============================================================================
 resource "aws_vpc" "this" {
   cidr_block                       = var.vpc_cidr
   enable_dns_hostnames             = var.enable_dns_hostnames
@@ -15,9 +12,6 @@ resource "aws_vpc" "this" {
   )
 }
 
-# =============================================================================
-# Internet Gateway
-# =============================================================================
 resource "aws_internet_gateway" "this" {
   count = var.enable_internet_gateway ? 1 : 0
 
@@ -33,9 +27,6 @@ resource "aws_internet_gateway" "this" {
   depends_on = [aws_vpc.this]
 }
 
-# =============================================================================
-# Public Subnets
-# =============================================================================
 resource "aws_subnet" "public" {
   count = length(local.public_subnets)
 
@@ -56,9 +47,6 @@ resource "aws_subnet" "public" {
   )
 }
 
-# =============================================================================
-# Private Subnets
-# =============================================================================
 resource "aws_subnet" "private" {
   count = length(local.private_subnets)
 
@@ -78,9 +66,6 @@ resource "aws_subnet" "private" {
   )
 }
 
-# =============================================================================
-# Database Subnets
-# =============================================================================
 resource "aws_subnet" "database" {
   count = length(local.database_subnets)
 
@@ -98,9 +83,6 @@ resource "aws_subnet" "database" {
   )
 }
 
-# =============================================================================
-# Elastic IPs for NAT Gateways
-# =============================================================================
 resource "aws_eip" "nat" {
   count = local.create_nat_gateways && var.enable_internet_gateway ? (var.single_nat_gateway ? 1 : length(local.public_subnets)) : 0
 
@@ -117,9 +99,6 @@ resource "aws_eip" "nat" {
   depends_on = [aws_internet_gateway.this]
 }
 
-# =============================================================================
-# NAT Gateways
-# =============================================================================
 resource "aws_nat_gateway" "this" {
   count = local.create_nat_gateways && var.enable_internet_gateway ? (var.single_nat_gateway ? 1 : length(local.public_subnets)) : 0
 
@@ -137,9 +116,6 @@ resource "aws_nat_gateway" "this" {
   depends_on = [aws_internet_gateway.this]
 }
 
-# =============================================================================
-# Route Tables - Public
-# =============================================================================
 resource "aws_route_table" "public" {
   count = var.create_public_route_table && var.enable_internet_gateway ? 1 : 0
 
@@ -166,9 +142,6 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public[0].id
 }
 
-# =============================================================================
-# Route Tables - Private
-# =============================================================================
 resource "aws_route_table" "private" {
   count = var.create_private_route_table && local.create_nat_gateways ? (var.single_nat_gateway ? 1 : length(local.private_subnets)) : 0
 
@@ -195,9 +168,6 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private[var.single_nat_gateway ? 0 : count.index].id
 }
 
-# =============================================================================
-# Route Tables - Database
-# =============================================================================
 resource "aws_route_table" "database" {
   count = var.create_database_route_table && var.enable_database_subnets ? 1 : 0
 
@@ -219,9 +189,6 @@ resource "aws_route_table_association" "database" {
   route_table_id = aws_route_table.database[0].id
 }
 
-# =============================================================================
-# VPC Endpoints
-# =============================================================================
 data "aws_vpc_endpoint_service" "this" {
   for_each = var.enable_vpc_endpoints ? toset(var.vpc_endpoints) : []
 
@@ -272,7 +239,6 @@ resource "aws_vpc_endpoint" "interface" {
   )
 }
 
-# Security Group para VPC Endpoints Interface
 resource "aws_security_group" "vpc_endpoint" {
   for_each = var.enable_vpc_endpoints ? {
     for endpoint in var.vpc_endpoints : endpoint => endpoint
@@ -307,9 +273,6 @@ resource "aws_security_group" "vpc_endpoint" {
   )
 }
 
-# =============================================================================
-# VPC Flow Logs
-# =============================================================================
 resource "aws_flow_log" "this" {
   count = var.enable_flow_log ? 1 : 0
 
@@ -327,9 +290,6 @@ resource "aws_flow_log" "this" {
   )
 }
 
-# =============================================================================
-# DHCP Options Set
-# =============================================================================
 resource "aws_vpc_dhcp_options" "this" {
   count = var.enable_dhcp_options ? 1 : 0
 
@@ -354,9 +314,6 @@ resource "aws_vpc_dhcp_options_association" "this" {
   dhcp_options_id = aws_vpc_dhcp_options.this[0].id
 }
 
-# =============================================================================
-# Default Security Group
-# =============================================================================
 resource "aws_security_group" "default" {
   count = var.create_default_security_groups ? 1 : 0
 

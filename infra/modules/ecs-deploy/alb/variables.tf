@@ -1,4 +1,3 @@
-// TAGS
 variable "environment" {
   description = "Ambiente de implantação"
   type        = string
@@ -29,7 +28,6 @@ variable "tags" {
 
 
 
-// ALB CREATION
 variable "create_alb" {
   description = "Se true, cria o Application Load Balancer completo. Se false, apenas cria listener rule em ALB existente"
   type        = bool
@@ -124,7 +122,6 @@ variable "access_logs_prefix" {
   default     = null
 }
 
-// LISTENER RULE (for existing ALB)
 variable "listener_arn" {
   description = "ARN do listener (HTTP ou HTTPS) ao qual a regra será associada (usado apenas se create_alb=false)"
   type        = string
@@ -155,7 +152,6 @@ variable "host_headers" {
 }
 
 
-// TARGET GROUP
 variable "health_check_enabled" {
   description = "Se true, habilita o health check"
   type        = bool

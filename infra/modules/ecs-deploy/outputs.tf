@@ -1,6 +1,3 @@
-# =============================================================================
-# ECR Outputs
-# =============================================================================
 output "ecr_repository_url" {
   description = "URL do repositório ECR criado"
   value       = module.ecr.repository_url
@@ -16,9 +13,6 @@ output "ecr_registry_id" {
   value       = module.ecr.registry_id
 }
 
-# =============================================================================
-# IAM Outputs
-# =============================================================================
 output "execution_role_name" {
   description = "Nome da IAM Execution Role do ECS (se criada)"
   value       = module.ecs.execution_role_name
@@ -39,9 +33,6 @@ output "task_role_arn" {
   value       = module.ecs.task_role_arn
 }
 
-# =============================================================================
-# ALB Outputs
-# =============================================================================
 output "alb_arn" {
   description = "ARN do Application Load Balancer (se criado)"
   value       = module.alb.alb_arn
@@ -92,9 +83,6 @@ output "target_group_id" {
   value       = module.alb.target_group_id
 }
 
-# =============================================================================
-# ECS Outputs
-# =============================================================================
 output "ecs_service_name" {
   description = "Nome do Serviço ECS"
   value       = module.ecs.service_name
@@ -135,9 +123,6 @@ output "ecs_cluster_arn" {
   value       = module.ecs.cluster_arn
 }
 
-# =============================================================================
-# ADOT Outputs
-# =============================================================================
 output "adot_container_definition" {
   description = "JSON do container definition do ADOT"
   value       = module.adot.adot_container_definition
@@ -148,9 +133,6 @@ output "adot_remote_write_role_arn" {
   value       = module.adot.remote_write_role_arn
 }
 
-# =============================================================================
-# Secrets Manager Outputs
-# =============================================================================
 output "secret_arn" {
   description = "ARN do segredo criado (se aplicável)"
   value       = var.create_secret ? module.secrets_manager[0].secret_arn : null
@@ -166,9 +148,6 @@ output "secret_id" {
   value       = var.create_secret ? module.secrets_manager[0].secret_id : null
 }
 
-# =============================================================================
-# FireLens Outputs
-# =============================================================================
 output "firelens_s3_bucket_name" {
   description = "Nome do bucket S3 utilizado para armazenar os logs via FireLens (se aplicável)"
   value       = module.firelens.firelens_s3_bucket_name
@@ -179,9 +158,6 @@ output "firelens_s3_bucket_arn" {
   value       = module.firelens.firelens_s3_bucket_arn
 }
 
-# =============================================================================
-# Common Outputs
-# =============================================================================
 output "application_name" {
   description = "Nome da aplicação"
   value       = var.application

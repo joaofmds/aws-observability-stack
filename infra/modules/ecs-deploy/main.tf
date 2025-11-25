@@ -1,4 +1,3 @@
-# Locals for common resources
 data "aws_caller_identity" "current" {}
 
 locals {
@@ -12,9 +11,6 @@ locals {
   task_role_name = "${var.application}-ecs-task-role-${var.environment}"
 }
 
-# ------------------------------------------------------------------------------
-# ADOT Collector
-# ------------------------------------------------------------------------------
 module "adot" {
   source = "./adot"
 
@@ -28,8 +24,6 @@ module "adot" {
   amp_remote_write_url   = var.amp_remote_write_url
   amp_workspace_arn      = var.amp_workspace_arn
   assume_role_principals = var.adot_assume_role_principals
-  # task_role_arn será null inicialmente para evitar dependência circular
-  # Será atualizado separadamente após o módulo ECS ser criado
   task_role_arn          = null
   log_group              = var.log_group
   log_stream_prefix      = var.log_stream_prefix
@@ -42,9 +36,6 @@ module "adot" {
   container_name         = var.adot_container_name
 }
 
-# ------------------------------------------------------------------------------
-# Application Load Balancer
-# ------------------------------------------------------------------------------
 module "alb" {
   source = "./alb"
 
@@ -54,7 +45,6 @@ module "alb" {
   application  = var.application
   tags         = var.tags
 
-  # ALB Creation
   create_alb                       = var.create_alb
   subnet_ids                       = var.create_alb ? var.alb_subnet_ids : []
   alb_internal                     = var.alb_internal
@@ -71,19 +61,16 @@ module "alb" {
   access_logs_bucket               = var.alb_access_logs_bucket
   access_logs_prefix               = var.alb_access_logs_prefix
 
-  # Listener Rule (for existing ALB)
   listener_arn  = var.create_alb ? null : var.listener_arn
   priority      = var.create_alb ? null : var.alb_priority
   path_patterns = var.path_patterns
   host_headers  = var.host_headers
 
-  # Target Group
   port        = var.container_port
   protocol    = var.alb_protocol
   vpc_id      = var.vpc_id
   target_type = var.target_type
 
-  # Health Check
   health_check_enabled             = var.health_check_enabled
   health_check_path                = var.health_check_path
   health_check_interval            = var.health_check_interval
@@ -94,7 +81,6 @@ module "alb" {
   health_check_protocol            = var.health_check_protocol
   health_check_port                = var.health_check_port
 
-  # Target Group Advanced
   deregistration_delay = var.target_group_deregistration_delay
   slow_start           = var.target_group_slow_start
   enable_stickiness    = var.target_group_enable_stickiness
@@ -102,9 +88,6 @@ module "alb" {
   cookie_duration      = var.target_group_cookie_duration
 }
 
-# ------------------------------------------------------------------------------
-# ECR Repository
-# ------------------------------------------------------------------------------
 module "ecr" {
   source = "./ecr"
 
@@ -122,9 +105,6 @@ module "ecr" {
   max_image_count         = var.ecr_max_image_count
 }
 
-# ------------------------------------------------------------------------------
-# ECS Service & Task Definition
-# ------------------------------------------------------------------------------
 module "ecs" {
   source = "./ecs"
 
@@ -204,9 +184,6 @@ module "ecs" {
   ]
 }
 
-# ------------------------------------------------------------------------------
-# FireLens / Logging
-# ------------------------------------------------------------------------------
 module "firelens" {
   source = "./firelens"
 
@@ -249,9 +226,6 @@ module "firelens" {
   task_role_arn                      = null
 }
 
-# ------------------------------------------------------------------------------
-# Attach FireLens policy to ECS task role (after both modules are created)
-# ------------------------------------------------------------------------------
 resource "aws_iam_role_policy_attachment" "firelens_task_role" {
   count = var.enable_firelens ? 1 : 0
 
@@ -264,25 +238,6 @@ resource "aws_iam_role_policy_attachment" "firelens_task_role" {
   ]
 }
 
-# ------------------------------------------------------------------------------
-# Allow ECS Security Group to access Loki Security Group
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# Update ADOT remote write role assume policy to include ECS task role
-# Atualiza a role existente criada pelo módulo adot para incluir o task_role_arn
-# ------------------------------------------------------------------------------
-# Nota: O módulo adot cria a role inicialmente sem o task_role_arn (passando null).
-# A role será atualizada manualmente ou via script após o apply para incluir o task_role_arn.
-# Alternativamente, pode-se usar terraform apply em duas etapas:
-# 1. Primeiro apply sem o task_role_arn
-# 2. Segundo apply passando o task_role_arn para atualizar a role
-#
-# Por enquanto, removemos o recurso de atualização para evitar dependência circular
-# e o erro EntityAlreadyExists. A role pode ser atualizada manualmente depois se necessário.
-
-# ------------------------------------------------------------------------------
-# Secrets Manager (optional)
-# ------------------------------------------------------------------------------
 module "secrets_manager" {
   count  = var.create_secret ? 1 : 0
   source = "./secrets-manager"

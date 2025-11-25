@@ -1,6 +1,3 @@
-# =============================================================================
-# VPC Configuration
-# =============================================================================
 variable "environment" {
   description = "Ambiente de implantação (ex: dev, staging, prod)"
   type        = string
@@ -63,18 +60,12 @@ variable "assign_generated_ipv6_cidr_block" {
   default     = false
 }
 
-# =============================================================================
-# Internet Gateway
-# =============================================================================
 variable "enable_internet_gateway" {
   description = "Habilitar criação do Internet Gateway"
   type        = bool
   default     = true
 }
 
-# =============================================================================
-# NAT Gateway Configuration
-# =============================================================================
 variable "enable_nat_gateway" {
   description = "Habilitar criação de NAT Gateways nas subnets públicas"
   type        = bool
@@ -105,9 +96,6 @@ variable "nat_gateway_tags" {
   default     = {}
 }
 
-# =============================================================================
-# Subnets Configuration
-# =============================================================================
 variable "enable_database_subnets" {
   description = "Criar subnets dedicadas para bancos de dados (isoladas)"
   type        = bool
@@ -138,9 +126,6 @@ variable "database_subnet_tags" {
   default     = {}
 }
 
-# =============================================================================
-# Route Tables
-# =============================================================================
 variable "create_public_route_table" {
   description = "Criar Route Table separada para subnets públicas"
   type        = bool
@@ -177,9 +162,6 @@ variable "database_route_table_tags" {
   default     = {}
 }
 
-# =============================================================================
-# VPC Endpoints
-# =============================================================================
 variable "enable_vpc_endpoints" {
   description = "Habilitar criação de VPC Endpoints"
   type        = bool
@@ -198,9 +180,6 @@ variable "vpc_endpoint_route_table_ids" {
   default     = []
 }
 
-# =============================================================================
-# Flow Logs
-# =============================================================================
 variable "enable_flow_log" {
   description = "Habilitar VPC Flow Logs"
   type        = bool
@@ -239,9 +218,6 @@ variable "flow_log_iam_role_arn" {
   default     = null
 }
 
-# =============================================================================
-# DHCP Options
-# =============================================================================
 variable "enable_dhcp_options" {
   description = "Habilitar configuração de DHCP Options"
   type        = bool
@@ -278,9 +254,6 @@ variable "dhcp_options_netbios_node_type" {
   default     = null
 }
 
-# =============================================================================
-# Security Groups
-# =============================================================================
 variable "create_default_security_groups" {
   description = "Criar Security Groups padrão (default, public, private)"
   type        = bool

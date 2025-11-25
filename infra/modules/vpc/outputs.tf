@@ -1,6 +1,3 @@
-# =============================================================================
-# VPC Outputs
-# =============================================================================
 output "vpc_id" {
   description = "ID da VPC criada"
   value       = aws_vpc.this.id
@@ -31,9 +28,6 @@ output "vpc_main_route_table_id" {
   value       = aws_vpc.this.main_route_table_id
 }
 
-# =============================================================================
-# Internet Gateway Outputs
-# =============================================================================
 output "internet_gateway_id" {
   description = "ID do Internet Gateway (se criado)"
   value       = var.enable_internet_gateway ? aws_internet_gateway.this[0].id : null
@@ -44,9 +38,6 @@ output "internet_gateway_arn" {
   value       = var.enable_internet_gateway ? aws_internet_gateway.this[0].arn : null
 }
 
-# =============================================================================
-# NAT Gateway Outputs
-# =============================================================================
 output "nat_gateway_ids" {
   description = "IDs dos NAT Gateways criados"
   value       = aws_nat_gateway.this[*].id
@@ -57,9 +48,6 @@ output "nat_public_ips" {
   value       = aws_eip.nat[*].public_ip
 }
 
-# =============================================================================
-# Subnet Outputs
-# =============================================================================
 output "public_subnet_ids" {
   description = "IDs das subnets públicas"
   value       = aws_subnet.public[*].id
@@ -105,9 +93,6 @@ output "database_subnet_cidrs" {
   value       = aws_subnet.database[*].cidr_block
 }
 
-# =============================================================================
-# Route Table Outputs
-# =============================================================================
 output "public_route_table_id" {
   description = "ID da Route Table pública (se criada)"
   value       = var.create_public_route_table && var.enable_internet_gateway ? aws_route_table.public[0].id : null
@@ -128,9 +113,6 @@ output "database_route_table_id" {
   value       = var.create_database_route_table && var.enable_database_subnets ? aws_route_table.database[0].id : null
 }
 
-# =============================================================================
-# VPC Endpoint Outputs
-# =============================================================================
 output "vpc_endpoint_ids" {
   description = "IDs dos VPC Endpoints criados"
   value       = merge(aws_vpc_endpoint.gateway, aws_vpc_endpoint.interface)
@@ -144,41 +126,26 @@ output "vpc_endpoint_arns" {
   )
 }
 
-# =============================================================================
-# Flow Log Outputs
-# =============================================================================
 output "flow_log_id" {
   description = "ID do Flow Log (se criado)"
   value       = var.enable_flow_log ? aws_flow_log.this[0].id : null
 }
 
-# =============================================================================
-# DHCP Options Outputs
-# =============================================================================
 output "dhcp_options_id" {
   description = "ID do DHCP Options Set (se criado)"
   value       = var.enable_dhcp_options ? aws_vpc_dhcp_options.this[0].id : null
 }
 
-# =============================================================================
-# Security Group Outputs
-# =============================================================================
 output "default_security_group_id" {
   description = "ID do Security Group padrão criado (se criado)"
   value       = var.create_default_security_groups ? aws_security_group.default[0].id : null
 }
 
-# =============================================================================
-# Availability Zones
-# =============================================================================
 output "availability_zones" {
   description = "Availability Zones utilizadas"
   value       = var.availability_zones
 }
 
-# =============================================================================
-# Common Outputs
-# =============================================================================
 output "name_prefix" {
   description = "Prefixo de nome usado nos recursos"
   value       = local.name_prefix

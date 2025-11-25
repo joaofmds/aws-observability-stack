@@ -1,6 +1,3 @@
-# =============================================================================
-# IAM Outputs
-# =============================================================================
 output "grafana_service_role_name" {
   description = "Nome da IAM Role do serviço Grafana"
   value       = module.grafana_service_role.role_name
@@ -16,9 +13,6 @@ output "grafana_service_policy_arn" {
   value       = module.grafana_service_role.policy_arn
 }
 
-# =============================================================================
-# Prometheus (AMP) Outputs
-# =============================================================================
 output "prometheus_workspace_id" {
   description = "ID do workspace AMP"
   value       = module.prometheus.workspace_id
@@ -39,9 +33,6 @@ output "prometheus_query_endpoint" {
   value       = module.prometheus.query_endpoint
 }
 
-# =============================================================================
-# Grafana Outputs
-# =============================================================================
 output "grafana_workspace_url" {
   description = "URL do workspace Grafana"
   value       = module.grafana.grafana_workspace_url
@@ -62,9 +53,6 @@ output "grafana_workspace_security_group_id" {
   value       = module.grafana.grafana_workspace_security_group_id
 }
 
-# =============================================================================
-# Loki Outputs
-# =============================================================================
 output "loki_service_name" {
   description = "Nome do serviço ECS do Loki (se aplicável)"
   value       = var.enable_loki ? module.loki[0].loki_service_name : null
@@ -135,9 +123,6 @@ output "loki_port" {
   value       = var.enable_loki ? var.loki_port : null
 }
 
-# =============================================================================
-# Common Outputs
-# =============================================================================
 output "environment" {
   description = "Ambiente de implantação"
   value       = var.environment

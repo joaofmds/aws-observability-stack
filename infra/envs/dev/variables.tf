@@ -52,11 +52,6 @@ variable "loki_vpc_endpoint_allowed_principals" {
   ]
 }
 
-# ------------------------------------------------------------------------------
-# ECS Deploy variables
-# ------------------------------------------------------------------------------
-
-# ALB Configuration
 variable "create_alb" {
   description = "Se true, cria o Application Load Balancer completo. Se false, apenas cria listener rule em ALB existente"
   type        = bool
@@ -366,9 +361,6 @@ variable "secret_kms_key_id" {
   default = null
 }
 
-# ------------------------------------------------------------------------------
-# VPC Configuration
-# ------------------------------------------------------------------------------
 variable "vpc_cidr" {
   description = "CIDR block para a VPC (ex: 10.0.0.0/16)"
   type        = string

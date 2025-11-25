@@ -1,6 +1,3 @@
-# =============================================================================
-# TAGS
-# =============================================================================
 variable "environment" {
   description = "Ambiente de implantação"
   type        = string
@@ -29,17 +26,11 @@ variable "tags" {
   description = "Tags padrão aplicadas aos recursos"
 }
 
-# =============================================================================
-# COMMON
-# =============================================================================
 variable "region" {
   description = "AWS region"
   type        = string
 }
 
-# =============================================================================
-# AMAZON MANAGED PROMETHEUS (AMP)
-# =============================================================================
 variable "prometheus_alias" {
   description = "Alias legível para o Workspace do AMP"
   type        = string
@@ -50,9 +41,6 @@ variable "prometheus_alias" {
   }
 }
 
-# =============================================================================
-# AMAZON MANAGED GRAFANA
-# =============================================================================
 variable "grafana_enabled_data_sources" {
   description = "Lista de fontes de dados a habilitar no Grafana"
   type        = list(string)
@@ -122,9 +110,6 @@ EOF
   ]
 }
 
-# =============================================================================
-# LOKI ON ECS
-# =============================================================================
 variable "enable_loki" {
   description = "Se true, habilita o deployment do Loki no ECS"
   type        = bool

@@ -1,13 +1,9 @@
-# Data sources
 data "aws_availability_zones" "available" {
   state = "available"
 }
 
 data "aws_caller_identity" "current" {}
 
-# ------------------------------------------------------------------------------
-# VPC Module
-# ------------------------------------------------------------------------------
 module "vpc" {
   source = "../../modules/vpc"
 
@@ -28,9 +24,6 @@ module "vpc" {
   enable_flow_log         = var.enable_flow_log
 }
 
-# ------------------------------------------------------------------------------
-# Observability Stack Blueprint
-# ------------------------------------------------------------------------------
 module "observability" {
   source = "../../modules/observability"
 
@@ -41,10 +34,8 @@ module "observability" {
   tags         = var.tags
   region       = var.region
 
-  # Prometheus Configuration
   prometheus_alias = "central-prometheus"
 
-  # Grafana Configuration
   grafana_enabled_data_sources     = ["CLOUDWATCH", "PROMETHEUS"]
   grafana_authentication_providers = ["AWS_SSO"]
   grafana_account_access_type      = "CURRENT_ACCOUNT"
@@ -53,7 +44,6 @@ module "observability" {
   grafana_vpc_id                   = module.vpc.vpc_id
   grafana_vpc_subnet_ids           = module.vpc.private_subnet_ids
 
-  # Custom Grafana IAM Policy (includes Prometheus, CloudWatch, SNS, SES)
   grafana_custom_policy_json = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -117,7 +107,6 @@ module "observability" {
     ]
   })
 
-  # Loki Configuration
   enable_loki                        = var.enable_loki
   loki_name_prefix                   = "dev"
   loki_vpc_id                        = module.vpc.vpc_id
@@ -136,14 +125,9 @@ module "observability" {
   loki_allowed_cidr_blocks = [
     "10.0.0.0/16"
   ]
-  # Nota: loki_additional_security_group_ids não é mais necessário aqui
-  # A regra de Security Group é criada diretamente abaixo para evitar dependências circulares
   loki_vpc_endpoint_allowed_principals = var.loki_vpc_endpoint_allowed_principals
 }
 
-# ------------------------------------------------------------------------------
-# ECS Deploy Blueprint
-# ------------------------------------------------------------------------------
 module "ecs_deploy" {
   source = "../../modules/ecs-deploy"
 
@@ -155,13 +139,11 @@ module "ecs_deploy" {
 
   region = var.region
 
-  # Networking
   vpc_id         = module.vpc.vpc_id
   subnet_ids     = module.vpc.private_subnet_ids
   alb_sg_id      = var.create_alb ? null : var.alb_security_group_id
   allowed_sg_ids = var.allowed_security_group_ids
 
-  # ALB Creation
   create_alb                           = var.create_alb
   alb_subnet_ids                       = var.create_alb ? module.vpc.public_subnet_ids : []
   alb_internal                         = var.alb_internal
@@ -178,30 +160,25 @@ module "ecs_deploy" {
   alb_access_logs_bucket               = var.alb_access_logs_bucket
   alb_access_logs_prefix               = var.alb_access_logs_prefix
 
-  # ALB Listener Rule (for existing ALB)
   listener_arn  = var.create_alb ? null : var.alb_listener_arn
   alb_priority  = var.create_alb ? null : var.alb_priority
   path_patterns = var.alb_path_patterns
   host_headers  = var.alb_host_headers
 
-  # ECS Cluster
   create_cluster = true
   cluster_id     = null
   cluster_name   = "${var.application}-cluster-${var.environment}"
 
-  # ECS Service
   container_port             = var.container_port
   desired_count              = var.desired_count
   capacity_provider_strategy = var.capacity_provider_strategy
   assign_public_ip           = false
 
-  # Task sizing
   task_cpu         = var.task_cpu
   task_memory      = var.task_memory
   container_cpu    = var.container_cpu
   container_memory = var.container_memory
 
-  # Autoscaling (optional)
   enable_autoscaling                = var.enable_autoscaling
   autoscaling_min_capacity          = var.autoscaling_min_capacity
   autoscaling_max_capacity          = var.autoscaling_max_capacity
@@ -211,7 +188,6 @@ module "ecs_deploy" {
   autoscaling_scale_in_cooldown     = var.autoscaling_scale_in_cooldown
   autoscaling_scale_out_cooldown    = var.autoscaling_scale_out_cooldown
 
-  # FireLens / Logging
   enable_cloudwatch_logs             = true
   enable_firelens                    = var.enable_firelens
   s3_logs_bucket_name                = var.s3_logs_bucket_name
@@ -222,18 +198,15 @@ module "ecs_deploy" {
   s3_logs_transition_to_glacier_days = var.s3_logs_transition_to_glacier_days
   s3_logs_expiration_days            = var.s3_logs_expiration_days
 
-  # ADOT
   enable_metrics       = true
   amp_remote_write_url = module.observability.prometheus_remote_write_endpoint
   amp_workspace_arn    = module.observability.prometheus_workspace_arn
 
-  # Loki integration
   enable_loki            = var.enable_loki
   loki_host              = var.enable_loki ? module.observability.loki_host : null
   loki_port              = var.enable_loki ? module.observability.loki_port : null
   loki_security_group_id = var.enable_loki ? module.observability.loki_task_security_group_id : null
 
-  # Secrets Manager
   create_secret        = var.create_secret
   secret_name_override = var.secret_name_override
   secret_description   = var.secret_description
@@ -241,14 +214,7 @@ module "ecs_deploy" {
   secret_kms_key_id    = var.secret_kms_key_id
 }
 
-# ------------------------------------------------------------------------------
-# Allow ECS Security Group to access Loki Security Group
-# (Criado aqui para evitar dependência circular entre módulos)
-# ------------------------------------------------------------------------------
 resource "aws_security_group_rule" "loki_ingress_from_ecs" {
-  # Usa apenas var.enable_loki no count (conhecido no plan time)
-  # O depends_on garante que os módulos sejam criados primeiro
-  # Se module.ecs_deploy.ecs_sg_id for null, o recurso falhará durante o apply com mensagem clara
   count = var.enable_loki ? 1 : 0
 
   type                     = "ingress"

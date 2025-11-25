@@ -1,6 +1,3 @@
-# =============================================================================
-# Observability Outputs
-# =============================================================================
 output "prometheus_workspace_id" {
   description = "ID do workspace AMP"
   value       = module.observability.prometheus_workspace_id
@@ -41,9 +38,6 @@ output "grafana_service_role_arn" {
   value       = module.observability.grafana_service_role_arn
 }
 
-# =============================================================================
-# Loki Outputs
-# =============================================================================
 output "loki_nlb_dns_name" {
   description = "DNS name do NLB do Loki"
   value       = var.enable_loki ? module.observability.loki_nlb_dns_name : null
@@ -84,9 +78,6 @@ output "loki_s3_bucket_name" {
   value       = var.enable_loki ? module.observability.loki_s3_bucket_name : null
 }
 
-# =============================================================================
-# ECS Deploy Outputs
-# =============================================================================
 output "ecs_service_name" {
   description = "Nome do Serviço ECS criado"
   value       = module.ecs_deploy.ecs_service_name
@@ -117,9 +108,6 @@ output "ecs_cluster_arn" {
   value       = module.ecs_deploy.ecs_cluster_arn
 }
 
-# =============================================================================
-# ALB Outputs
-# =============================================================================
 output "alb_arn" {
   description = "ARN do Application Load Balancer (se criado)"
   value       = module.ecs_deploy.alb_arn
@@ -165,9 +153,6 @@ output "target_group_id" {
   value       = module.ecs_deploy.target_group_id
 }
 
-# =============================================================================
-# VPC Outputs
-# =============================================================================
 output "vpc_id" {
   description = "ID da VPC criada"
   value       = module.vpc.vpc_id

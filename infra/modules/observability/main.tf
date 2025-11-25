@@ -1,4 +1,3 @@
-# Locals for common resources
 locals {
   common_tags = merge(var.tags, {
     Environment = var.environment
@@ -8,9 +7,6 @@ locals {
   })
 }
 
-# ------------------------------------------------------------------------------
-# IAM Role for Grafana Service
-# ------------------------------------------------------------------------------
 module "grafana_service_role" {
   source = "./aws-iam-role"
 
@@ -41,9 +37,6 @@ module "grafana_service_role" {
   prevent_destroy     = false
 }
 
-# ------------------------------------------------------------------------------
-# Amazon Managed Prometheus (AMP)
-# ------------------------------------------------------------------------------
 module "prometheus" {
   source = "./aws-prometheus"
 
@@ -57,9 +50,6 @@ module "prometheus" {
   region = var.region
 }
 
-# ------------------------------------------------------------------------------
-# Amazon Managed Grafana
-# ------------------------------------------------------------------------------
 module "grafana" {
   source = "./aws-grafana"
 
@@ -84,9 +74,6 @@ module "grafana" {
   ]
 }
 
-# ------------------------------------------------------------------------------
-# Loki on ECS (Optional)
-# ------------------------------------------------------------------------------
 module "loki" {
   count  = var.enable_loki ? 1 : 0
   source = "./aws-loki-ecs"
@@ -121,10 +108,6 @@ module "loki" {
   ]
 }
 
-# ------------------------------------------------------------------------------
-# Allow Grafana Security Group to access Loki Security Group
-# (Adicionado após ambos serem criados para evitar dependências circulares)
-# ------------------------------------------------------------------------------
 resource "aws_security_group_rule" "loki_ingress_from_grafana" {
   count = var.enable_loki && length(var.grafana_vpc_subnet_ids) > 0 ? 1 : 0
 
@@ -145,35 +128,4 @@ resource "aws_security_group_rule" "loki_ingress_from_grafana" {
     create_before_destroy = true
   }
 }
-
-# ------------------------------------------------------------------------------
-# Allow additional external Security Groups to access Loki Security Group
-# (For Security Groups created after Loki, like ECS tasks)
-# Excludes Security Groups already in loki_allowed_security_group_ids to avoid duplicates
-# 
-# NOTA: Este recurso está temporariamente desabilitado porque depende de valores
-# que só são conhecidos após o apply do módulo ecs_deploy (ecs_sg_id).
-# Para habilitar:
-# 1. Execute o apply inicial sem este recurso
-# 2. Depois de apply bem-sucedido, descomente este recurso e execute apply novamente
-# ------------------------------------------------------------------------------
-# resource "aws_security_group_rule" "loki_ingress_from_additional_sgs" {
-#   for_each = var.enable_loki ? toset(var.loki_additional_security_group_ids) : toset([])
-# 
-#   type                     = "ingress"
-#   from_port                = var.loki_port
-#   to_port                  = var.loki_port
-#   protocol                 = "tcp"
-#   source_security_group_id = each.value
-#   security_group_id        = module.loki[0].loki_task_security_group_id
-#   description              = "Allow external security group to access Loki via NLB"
-# 
-#   depends_on = [
-#     module.loki
-#   ]
-# 
-#   lifecycle {
-#     create_before_destroy = true
-#   }
-# }
 

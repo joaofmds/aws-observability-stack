@@ -112,13 +112,11 @@ resource "aws_s3_bucket_policy" "firelens_logs" {
 data "aws_iam_policy_document" "firelens_task_role" {
   count = var.enable_firelens ? 1 : 0
 
-  # Permissão pra router listar o bucket
   statement {
     actions   = ["s3:ListBucket", "s3:GetBucketLocation"]
     resources = [aws_s3_bucket.firelens_logs[0].arn]
   }
 
-  # Permissão pra escrever objetos de log no prefixo
   statement {
     actions = [
       "s3:PutObject",

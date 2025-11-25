@@ -19,13 +19,8 @@ locals {
 
   loki_s3_bucket_arn = var.create_s3_bucket ? aws_s3_bucket.loki[0].arn : "arn:aws:s3:::${local.loki_s3_bucket_name}"
 
-  # Hash do template para forçar atualização da task definition quando o template mudar
   loki_config_hash = substr(sha256(local.loki_config_yaml), 0, 8)
 }
-
-# ---------------------------------------------------------------------------
-# S3 bucket para storage do Loki
-# ---------------------------------------------------------------------------
 
 resource "aws_s3_bucket" "loki" {
   count  = var.create_s3_bucket ? 1 : 0
@@ -57,10 +52,6 @@ resource "aws_s3_bucket_public_access_block" "loki" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
-
-# ---------------------------------------------------------------------------
-# IAM Roles
-# ---------------------------------------------------------------------------
 
 resource "aws_iam_role" "task_execution" {
   name = "${local.base_name}-exec-role"
@@ -134,10 +125,6 @@ resource "aws_iam_role_policy" "task_s3_access" {
   })
 }
 
-# ---------------------------------------------------------------------------
-# CloudWatch Logs somente para o container Loki (debug)
-# ---------------------------------------------------------------------------
-
 resource "aws_cloudwatch_log_group" "loki" {
   name              = "/ecs/${local.base_name}"
   retention_in_days = var.cloudwatch_log_retention_days
@@ -146,10 +133,6 @@ resource "aws_cloudwatch_log_group" "loki" {
     Name = "grafana-loki-${var.environment}"
   })
 }
-
-# ---------------------------------------------------------------------------
-# Security Group para tasks ECS (Loki)
-# ---------------------------------------------------------------------------
 
 resource "aws_security_group" "loki_tasks" {
   name        = "${local.base_name}-tasks-sg"
@@ -179,9 +162,6 @@ resource "aws_security_group_rule" "loki_ingress_cidr" {
   security_group_id = aws_security_group.loki_tasks.id
 }
 
-# Security Group rules para lista conhecida no plan time
-# Security Groups adicionados dinamicamente devem usar aws_security_group_rule separados
-# Usa toset() apenas se a lista for conhecida e não vazia
 resource "aws_security_group_rule" "loki_ingress_sg" {
   for_each = length(var.allowed_security_group_ids) > 0 ? toset([for sg_id in var.allowed_security_group_ids : sg_id if sg_id != null && sg_id != ""]) : toset([])
 
@@ -192,10 +172,6 @@ resource "aws_security_group_rule" "loki_ingress_sg" {
   source_security_group_id = each.value
   security_group_id        = aws_security_group.loki_tasks.id
 }
-
-# ---------------------------------------------------------------------------
-# ECS Cluster para Loki
-# ---------------------------------------------------------------------------
 
 resource "aws_ecs_cluster" "loki" {
   name = coalesce(var.ecs_cluster_name, local.base_name)
@@ -226,10 +202,6 @@ resource "aws_ecs_cluster_capacity_providers" "loki" {
   }
 }
 
-# ---------------------------------------------------------------------------
-# Loki config (YAML) + script de entrypoint
-# ---------------------------------------------------------------------------
-
 locals {
   loki_config_yaml = templatefile("${path.module}/templates/loki-config.yaml.tpl", {
     s3_bucket_name = local.loki_s3_bucket_name
@@ -237,7 +209,6 @@ locals {
     retention_days = var.retention_days
   })
 
-  # Conteúdo do script de entrypoint (gerado a partir do template)
   loki_entrypoint_script = templatefile("${path.module}/templates/loki-entrypoint.sh.tpl", {
     loki_config = local.loki_config_yaml
   })
@@ -248,7 +219,6 @@ locals {
       image     = var.loki_image
       essential = true
 
-      # IMPORTANTE: sobrescreve o ENTRYPOINT padrão da imagem do Loki
       entryPoint = ["/bin/sh", "-c"]
       command    = [local.loki_entrypoint_script]
 
@@ -279,24 +249,9 @@ locals {
           value = local.loki_config_hash
         }
       ]
-
-      # Health check do container temporariamente desabilitado para debug
-      # A imagem grafana/loki pode não ter wget instalado
-      # TODO: Verificar se wget ou curl está disponível na imagem e reabilitar
-      # healthCheck = {
-      #   command     = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:${var.loki_port}/ready || exit 1"]
-      #   interval    = 30
-      #   timeout     = 5
-      #   retries     = 3
-      #   startPeriod = 60
-      # }
     }
   ])
 }
-
-# ---------------------------------------------------------------------------
-# ECS Task Definition
-# ---------------------------------------------------------------------------
 
 resource "aws_ecs_task_definition" "loki" {
   family                   = local.base_name
@@ -319,10 +274,6 @@ resource "aws_ecs_task_definition" "loki" {
   })
 }
 
-# ---------------------------------------------------------------------------
-# NLB + Target Group + Listener
-# ---------------------------------------------------------------------------
-
 resource "aws_lb" "loki" {
   name               = substr("${local.base_name}-nlb", 0, 32)
   internal           = true
@@ -331,7 +282,6 @@ resource "aws_lb" "loki" {
 
   lifecycle {
     create_before_destroy = true
-    # Ignorar mudanças em subnets e VPC se já existe
     ignore_changes = [
       subnets
     ]
@@ -350,21 +300,17 @@ resource "aws_lb_target_group" "loki" {
   vpc_id      = var.vpc_id
 
   health_check {
-    # Temporariamente usando TCP para validar conectividade de rede
-    # TODO: Voltar para HTTP após confirmar que /ready está respondendo corretamente
     protocol            = "TCP"
     port                = var.loki_port
     healthy_threshold   = 2
     unhealthy_threshold = 3
     timeout             = 10
     interval            = 30
-    # Nota: matcher e path só são válidos para protocol HTTP/HTTPS, não para TCP
   }
 
   lifecycle {
     create_before_destroy = true
     ignore_changes = [
-      # Ignorar mudanças se já existe com nome diferente
       name,
       vpc_id
     ]
@@ -386,26 +332,16 @@ resource "aws_lb_listener" "loki" {
   }
 }
 
-# ---------------------------------------------------------------------------
-# VPC Endpoint Service (PrivateLink) para Loki
-# ---------------------------------------------------------------------------
-
 resource "aws_vpc_endpoint_service" "loki" {
-  # Serviço PrivateLink que expõe o NLB interno do Loki
   acceptance_required        = true
   network_load_balancer_arns = [aws_lb.loki.arn]
 
-  # Contas que podem criar endpoints diretamente (ex: arn:aws:iam::<acc>:root)
   allowed_principals = var.vpc_endpoint_allowed_principals
 
   tags = merge(local.common_tags, {
     Name = "${local.base_name}-endpoint-service"
   })
 }
-
-# ---------------------------------------------------------------------------
-# ECS Service
-# ---------------------------------------------------------------------------
 
 resource "aws_ecs_service" "loki" {
   name            = local.base_name

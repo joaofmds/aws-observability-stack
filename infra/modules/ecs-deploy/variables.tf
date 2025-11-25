@@ -1,6 +1,3 @@
-# =============================================================================
-# TAGS
-# =============================================================================
 variable "environment" {
   description = "Ambiente de implantação"
   type        = string
@@ -29,9 +26,6 @@ variable "tags" {
   description = "Tags padrão aplicadas aos recursos"
 }
 
-# =============================================================================
-# ECR
-# =============================================================================
 variable "ecr_image_tag_mutability" {
   type        = string
   default     = "MUTABLE"
@@ -72,9 +66,6 @@ variable "ecr_max_image_count" {
   description = "Número máximo de imagens mantidas no repositório"
 }
 
-# =============================================================================
-# IAM TASK ROLE
-# =============================================================================
 variable "task_role_policy_json" {
   description = "Política IAM (JSON) a ser anexada à task role"
   type        = string
@@ -87,13 +78,6 @@ variable "task_managed_policy_arns" {
   default     = []
 }
 
-# =============================================================================
-# IAM GENERAL
-# =============================================================================
-
-# =============================================================================
-# SECRETS MANAGER
-# =============================================================================
 variable "create_secret" {
   description = "Se true, cria um secret no AWS Secrets Manager"
   type        = bool
@@ -125,9 +109,6 @@ variable "secret_kms_key_id" {
   default     = null
 }
 
-# =============================================================================
-# ECS CLUSTER
-# =============================================================================
 variable "create_cluster" {
   description = "Se true, cria o ECS Cluster internamente. Se false, é necessário informar cluster_id e cluster_name."
   type        = bool
@@ -162,9 +143,6 @@ variable "task_role_arn" {
   default     = null
 }
 
-# =============================================================================
-# ECS TASK DEFINITION
-# =============================================================================
 variable "task_cpu" {
   type        = number
   description = "CPU alocada para a Task ECS."
@@ -275,9 +253,6 @@ EOT
   default = []
 }
 
-# =============================================================================
-# AUTOSCALING
-# =============================================================================
 variable "enable_autoscaling" {
   description = "Se true, habilita a configuração de Application Auto Scaling para o serviço."
   type        = bool
@@ -326,11 +301,6 @@ variable "autoscaling_scale_out_cooldown" {
   default     = 60
 }
 
-# =============================================================================
-# ALB / LOAD BALANCER
-# =============================================================================
-
-# ALB Creation
 variable "create_alb" {
   description = "Se true, cria o Application Load Balancer completo. Se false, apenas cria listener rule em ALB existente"
   type        = bool
@@ -425,7 +395,6 @@ variable "alb_access_logs_prefix" {
   default     = null
 }
 
-# Listener Rule (for existing ALB)
 variable "listener_arn" {
   description = "ARN do listener (HTTP ou HTTPS) ao qual a regra será associada (usado apenas se create_alb=false)"
   type        = string
@@ -455,7 +424,6 @@ variable "host_headers" {
   default     = []
 }
 
-# Health Check
 variable "health_check_enabled" {
   description = "Se true, habilita o health check"
   type        = bool
@@ -514,7 +482,6 @@ variable "health_check_port" {
   default     = null
 }
 
-# Target Group
 variable "alb_protocol" {
   description = "Protocolo do Load Balancer (HTTP ou HTTPS)"
   type        = string
@@ -577,9 +544,6 @@ variable "allowed_sg_ids" {
   default     = []
 }
 
-# =============================================================================
-# ADOT (AWS Distro for OpenTelemetry)
-# =============================================================================
 variable "region" {
   description = "AWS region"
   type        = string
@@ -665,9 +629,6 @@ variable "adot_container_name" {
   default     = null
 }
 
-# =============================================================================
-# FIRELENS / LOGGING
-# =============================================================================
 variable "enable_firelens" {
   description = "Habilita o sidecar FireLens/Fluent Bit para envio de logs ao S3"
   type        = bool

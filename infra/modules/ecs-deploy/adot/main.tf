@@ -1,9 +1,6 @@
 
 data "aws_caller_identity" "current" {}
 
-# ------------------------------------------------------------------------------
-# IAM Role for Remote Write
-# ------------------------------------------------------------------------------
 resource "aws_iam_role" "remote_write" {
   name = local.remote_write_role_name
 

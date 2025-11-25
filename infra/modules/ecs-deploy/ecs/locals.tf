@@ -23,9 +23,6 @@ locals {
     { tenant_id = var.loki_tenant_id }
   ) : local.loki_base_options
 
-  # Se enable_loki está true E loki_host está configurado, usa Loki
-  # Caso contrário, se enable_firelens está true, usa S3
-  # Se nenhum dos dois, usa CloudWatch Logs
   app_log_configuration = var.enable_firelens && var.enable_loki && var.loki_host != null && var.loki_host != "" ? {
     logDriver = "awsfirelens"
     options   = local.loki_options
@@ -88,13 +85,10 @@ locals {
     firelensConfiguration = {
       type = "fluentbit"
       options = {
-        # NÃO usamos config-file-* em Fargate aqui
         enable-ecs-log-metadata = "true"
       }
     }
 
-    # Essas envs hoje são opcionais (não usadas pelo FireLens automático),
-    # mas podemos manter se quiser aproveitar depois numa imagem customizada.
     environment = [
       { name = "APP_NAME", value = var.application },
       { name = "ENVIRONMENT", value = var.environment },

@@ -1,4 +1,3 @@
-// TAGS
 variable "environment" {
   description = "Ambiente de implantação"
   type        = string
@@ -29,7 +28,6 @@ variable "tags" {
 
 
 
-// CLOUDWATCH LOGS
 variable "enable_cloudwatch_logs" {
   description = "Controla a criação e utilização do CloudWatch Logs"
   type        = bool

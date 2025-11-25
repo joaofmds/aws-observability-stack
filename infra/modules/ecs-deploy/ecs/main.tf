@@ -1,6 +1,3 @@
-# ------------------------------------------------------------------------------
-# ECS Cluster
-# ------------------------------------------------------------------------------
 resource "aws_ecs_cluster" "this" {
   count = var.create_cluster ? 1 : 0
   name  = local.cluster_name
@@ -15,9 +12,6 @@ resource "aws_ecs_cluster" "this" {
   })
 }
 
-# ------------------------------------------------------------------------------
-# IAM Role for ECS Task Execution
-# ------------------------------------------------------------------------------
 resource "aws_iam_role" "execution" {
   count = var.execution_role_arn == null ? 1 : 0
   name  = local.execution_role_name
@@ -46,9 +40,6 @@ resource "aws_iam_role_policy_attachment" "execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# ------------------------------------------------------------------------------
-# IAM Role for ECS Task
-# ------------------------------------------------------------------------------
 resource "aws_iam_role" "task" {
   count = var.task_role_arn == null ? 1 : 0
   name  = local.task_role_name
@@ -94,9 +85,6 @@ resource "aws_iam_role_policy_attachment" "task_managed" {
   policy_arn = each.value
 }
 
-# ------------------------------------------------------------------------------
-# ECS Service
-# ------------------------------------------------------------------------------
 resource "aws_ecs_service" "this" {
   name            = local.service_name
   cluster         = local.cluster_id
@@ -226,9 +214,6 @@ resource "aws_appautoscaling_policy" "requests_scaling" {
   }
 }
 
-# ------------------------------------------------------------------------------
-# CloudWatch Log Group
-# ------------------------------------------------------------------------------
 resource "aws_cloudwatch_log_group" "this" {
   count             = var.enable_cloudwatch_logs ? 1 : 0
   name              = local.cloudwatch_log_group_name
@@ -239,9 +224,6 @@ resource "aws_cloudwatch_log_group" "this" {
   })
 }
 
-# ------------------------------------------------------------------------------
-# Security Group
-# ------------------------------------------------------------------------------
 resource "aws_security_group" "ecs_sg" {
   name        = local.security_group_name
   description = "Security Group para o ECS"

@@ -5,7 +5,6 @@ resource "aws_security_group" "workspace" {
   description = "Security group para Amazon Managed Grafana workspace acessar datasources privados"
   vpc_id      = length(var.vpc_subnet_ids) > 0 ? var.vpc_id : null
 
-  # Apenas egress, retorno é stateful
   egress {
     from_port   = 0
     to_port     = 0
@@ -38,7 +37,6 @@ resource "aws_grafana_workspace" "this" {
     }
   ))
 
-  # Só configura VPC se vpc_id e subnets forem fornecidos
   dynamic "vpc_configuration" {
     for_each = length(var.vpc_subnet_ids) > 0 ? [1] : []
     content {
