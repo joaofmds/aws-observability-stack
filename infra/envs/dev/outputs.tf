@@ -1,83 +1,3 @@
-output "prometheus_workspace_id" {
-  description = "ID do workspace AMP"
-  value       = module.observability.prometheus_workspace_id
-}
-
-output "prometheus_remote_write_endpoint" {
-  description = "Endpoint para uso com ADOT / Prometheus Remote Write"
-  value       = module.observability.prometheus_remote_write_endpoint
-}
-
-output "prometheus_workspace_arn" {
-  description = "ARN do workspace AMP"
-  value       = module.observability.prometheus_workspace_arn
-}
-
-output "prometheus_query_endpoint" {
-  description = "Endpoint para consultas (Grafana ou Prometheus UI)"
-  value       = module.observability.prometheus_query_endpoint
-}
-
-output "grafana_workspace_url" {
-  description = "URL do workspace Grafana"
-  value       = module.observability.grafana_workspace_url
-}
-
-output "grafana_workspace_id" {
-  description = "ID do workspace Grafana"
-  value       = module.observability.grafana_workspace_id
-}
-
-output "grafana_workspace_arn" {
-  description = "ARN do workspace Grafana"
-  value       = module.observability.grafana_workspace_arn
-}
-
-output "grafana_service_role_arn" {
-  description = "ARN da IAM Role do serviço Grafana"
-  value       = module.observability.grafana_service_role_arn
-}
-
-output "loki_nlb_dns_name" {
-  description = "DNS name do NLB do Loki"
-  value       = var.enable_loki ? module.observability.loki_nlb_dns_name : null
-}
-
-output "loki_host" {
-  description = "Host/DNS usado pelos serviços para se conectar ao Loki"
-  value       = var.enable_loki ? module.observability.loki_nlb_dns_name : null
-}
-
-output "loki_port" {
-  description = "Porta HTTP do Loki"
-  value       = 3100
-}
-
-output "loki_endpoint_http" {
-  description = "Endpoint HTTP do Loki (sem TLS, dentro da VPC)"
-  value       = var.enable_loki ? module.observability.loki_endpoint_http : null
-}
-
-output "loki_cluster_name" {
-  description = "Nome do cluster ECS do Loki"
-  value       = var.enable_loki ? module.observability.loki_ecs_cluster_name : null
-}
-
-output "loki_ecs_cluster_arn" {
-  description = "ARN do cluster ECS do Loki"
-  value       = var.enable_loki ? module.observability.loki_ecs_cluster_arn : null
-}
-
-output "loki_vpc_endpoint_service_name" {
-  description = "Nome do serviço PrivateLink do Loki"
-  value       = var.enable_loki ? module.observability.loki_vpc_endpoint_service_name : null
-}
-
-output "loki_s3_bucket_name" {
-  description = "Nome do bucket S3 utilizado pelo Loki"
-  value       = var.enable_loki ? module.observability.loki_s3_bucket_name : null
-}
-
 output "ecs_service_name" {
   description = "Nome do Serviço ECS criado"
   value       = module.ecs_deploy.ecs_service_name
@@ -154,32 +74,93 @@ output "target_group_id" {
 }
 
 output "vpc_id" {
-  description = "ID da VPC criada"
-  value       = module.vpc.vpc_id
-}
-
-output "vpc_cidr_block" {
-  description = "CIDR block da VPC"
-  value       = module.vpc.vpc_cidr_block
+  description = "ID da VPC (from network module remote state)"
+  value       = data.terraform_remote_state.network.outputs.vpc_id
 }
 
 output "public_subnet_ids" {
-  description = "IDs das subnets públicas"
-  value       = module.vpc.public_subnet_ids
+  description = "IDs das subnets públicas (from network module remote state)"
+  value       = data.terraform_remote_state.network.outputs.public_subnet_ids
 }
 
 output "private_subnet_ids" {
-  description = "IDs das subnets privadas"
-  value       = module.vpc.private_subnet_ids
+  description = "IDs das subnets privadas/app (from network module remote state)"
+  value       = data.terraform_remote_state.network.outputs.app_subnet_ids
+}
+
+output "app_subnet_ids" {
+  description = "IDs das subnets de aplicação (from network module remote state)"
+  value       = data.terraform_remote_state.network.outputs.app_subnet_ids
 }
 
 output "nat_gateway_ids" {
-  description = "IDs dos NAT Gateways criados"
-  value       = module.vpc.nat_gateway_ids
+  description = "IDs dos NAT Gateways (from network module remote state)"
+  value       = data.terraform_remote_state.network.outputs.nat_gateway_ids
 }
 
-output "internet_gateway_id" {
-  description = "ID do Internet Gateway (se criado)"
-  value       = module.vpc.internet_gateway_id
+# Outputs relacionados ao Observability (via remote states)
+output "prometheus_workspace_id" {
+  description = "ID do workspace AMP (from observability/prod remote state)"
+  value       = data.terraform_remote_state.observability_prod.outputs.prometheus_workspace_id
+}
+
+output "prometheus_remote_write_endpoint" {
+  description = "Endpoint para uso com ADOT / Prometheus Remote Write (from observability/prod remote state)"
+  value       = data.terraform_remote_state.observability_prod.outputs.prometheus_remote_write_endpoint
+}
+
+output "prometheus_workspace_arn" {
+  description = "ARN do workspace AMP (from observability/prod remote state)"
+  value       = data.terraform_remote_state.observability_prod.outputs.prometheus_workspace_arn
+}
+
+output "prometheus_query_endpoint" {
+  description = "Endpoint para consultas (Grafana ou Prometheus UI) (from observability/prod remote state)"
+  value       = data.terraform_remote_state.observability_prod.outputs.prometheus_query_endpoint
+}
+
+output "grafana_workspace_url" {
+  description = "URL do workspace Grafana (from observability/prod remote state)"
+  value       = data.terraform_remote_state.observability_prod.outputs.grafana_workspace_url
+}
+
+output "grafana_workspace_id" {
+  description = "ID do workspace Grafana (from observability/prod remote state)"
+  value       = data.terraform_remote_state.observability_prod.outputs.grafana_workspace_id
+}
+
+output "grafana_workspace_arn" {
+  description = "ARN do workspace Grafana (from observability/prod remote state)"
+  value       = data.terraform_remote_state.observability_prod.outputs.grafana_workspace_arn
+}
+
+output "grafana_service_role_arn" {
+  description = "ARN da IAM Role do serviço Grafana (from observability/prod remote state)"
+  value       = data.terraform_remote_state.observability_prod.outputs.grafana_service_role_arn
+}
+
+output "loki_vpce_dns_name" {
+  description = "DNS do VPC Endpoint do Loki (from observability/dev remote state)"
+  value       = var.enable_loki ? data.terraform_remote_state.observability_dev.outputs.loki_vpce_dns_name : null
+}
+
+output "loki_vpce_id" {
+  description = "ID do VPC Endpoint do Loki (from observability/dev remote state)"
+  value       = var.enable_loki ? data.terraform_remote_state.observability_dev.outputs.loki_vpce_id : null
+}
+
+output "loki_vpce_security_group_id" {
+  description = "ID do Security Group do VPC Endpoint do Loki (from observability/dev remote state)"
+  value       = var.enable_loki ? data.terraform_remote_state.observability_dev.outputs.loki_vpce_security_group_id : null
+}
+
+output "loki_host" {
+  description = "Host (DNS) do Loki via VPC Endpoint (from observability/dev remote state)"
+  value       = var.enable_loki ? data.terraform_remote_state.observability_dev.outputs.loki_vpce_dns_name : null
+}
+
+output "loki_port" {
+  description = "Porta HTTP do Loki"
+  value       = var.enable_loki ? 3100 : null
 }
 

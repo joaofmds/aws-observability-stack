@@ -4,14 +4,8 @@ owner        = "DevOps Team"
 application  = "observability-core"
 region       = "us-east-1"
 
-# VPC Configuration
-vpc_cidr           = "10.0.0.0/16"
-availability_zones = ["us-east-1a", "us-east-1b", "us-east-1c"]
-enable_nat_gateway = true
-single_nat_gateway = false  # Um NAT por AZ para alta disponibilidade
-enable_database_subnets = false
-enable_vpc_endpoints    = false
-enable_flow_log         = false
+# VPC é gerenciada pelo módulo network em outro repositório
+# Os dados são obtidos via terraform_remote_state no main.tf
 
 # ALB Configuration
 create_alb                           = true

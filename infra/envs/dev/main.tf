@@ -1,131 +1,46 @@
-data "aws_availability_zones" "available" {
-  state = "available"
-}
-
 data "aws_caller_identity" "current" {}
 
-module "vpc" {
-  source = "../../modules/vpc"
+# Remote state do módulo network que gerencia a VPC
+data "terraform_remote_state" "network" {
+  backend = "s3"
 
-  environment  = var.environment
-  project_name = var.project_name
-  owner        = var.owner
-  application  = var.application
-  tags         = var.tags
-
-  vpc_cidr           = var.vpc_cidr
-  availability_zones = length(var.availability_zones) > 0 ? var.availability_zones : slice(data.aws_availability_zones.available.names, 0, 3)
-
-  enable_nat_gateway      = var.enable_nat_gateway
-  single_nat_gateway      = var.single_nat_gateway
-  enable_database_subnets = var.enable_database_subnets
-  enable_vpc_endpoints    = var.enable_vpc_endpoints
-  vpc_endpoints           = var.vpc_endpoints
-  enable_flow_log         = var.enable_flow_log
+  config = {
+    bucket         = "r10score-terraform-state-dev"
+    key            = "network/dev/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "r10score-terraform-state-dev-locks"
+    encrypt        = true
+  }
 }
 
-module "observability" {
-  source = "../../modules/observability"
+# Remote state do módulo observability em produção (Prometheus, Grafana)
+data "terraform_remote_state" "observability_prod" {
+  backend = "s3"
 
-  environment  = var.environment
-  project_name = var.project_name
-  owner        = var.owner
-  application  = var.application
-  tags         = var.tags
-  region       = var.region
+  config = {
+    bucket         = "r10score-terraform-state-prod"
+    key            = "observability/prod/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
 
-  prometheus_alias = "central-prometheus"
-
-  grafana_enabled_data_sources     = ["CLOUDWATCH", "PROMETHEUS"]
-  grafana_authentication_providers = ["AWS_SSO"]
-  grafana_account_access_type      = "CURRENT_ACCOUNT"
-  grafana_alerting_enabled         = true
-  grafana_enable_plugin_management = true
-  grafana_vpc_id                   = module.vpc.vpc_id
-  grafana_vpc_subnet_ids           = module.vpc.private_subnet_ids
-
-  grafana_custom_policy_json = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "AllowPrometheusAccess"
-        Effect = "Allow"
-        Action = [
-          "aps:ListWorkspaces",
-          "aps:DescribeWorkspace",
-          "aps:QueryMetrics",
-          "aps:GetLabels",
-          "aps:GetSeries",
-          "aps:GetMetricMetadata"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid    = "AllowCloudWatchAccess"
-        Effect = "Allow"
-        Action = [
-          "cloudwatch:ListMetrics",
-          "cloudwatch:GetMetricData",
-          "cloudwatch:GetMetricStatistics",
-          "cloudwatch:DescribeAlarms"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid    = "AllowLogsAccess"
-        Effect = "Allow"
-        Action = [
-          "logs:DescribeLogGroups",
-          "logs:GetLogEvents",
-          "logs:DescribeLogStreams",
-          "logs:StartQuery",
-          "logs:GetQueryResults"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid      = "AllowSelfAssumeRole"
-        Effect   = "Allow"
-        Action   = "sts:AssumeRole"
-        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-grafana-service-role-${var.environment}"
-      },
-      {
-        Sid    = "AllowSESSendEmail"
-        Effect = "Allow"
-        Action = [
-          "ses:SendEmail",
-          "ses:SendRawEmail"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid      = "AllowSnsPublishToAlertsTopic"
-        Effect   = "Allow"
-        Action   = "sns:Publish"
-        Resource = var.alerts_sns_topic_arn != null ? var.alerts_sns_topic_arn : "*"
-      }
-    ]
-  })
-
-  enable_loki                        = var.enable_loki
-  loki_name_prefix                   = "dev"
-  loki_vpc_id                        = module.vpc.vpc_id
-  loki_private_subnet_ids            = module.vpc.private_subnet_ids
-  loki_ecs_cluster_name              = "dev-loki-cluster"
-  loki_desired_count                 = 1
-  loki_retention_days                = 30
-  loki_cloudwatch_log_retention_days = 3
-  loki_capacity_provider_strategies = [
-    {
-      capacity_provider = "FARGATE_SPOT"
-      weight            = 1
-      base              = 1
+    assume_role = {
+      role_arn     = "arn:aws:iam::016433505192:role/observability-core-remote-state-cross-account-access-prod"
+      session_name = "tfstate-access"
     }
-  ]
-  loki_allowed_cidr_blocks = [
-    "10.0.0.0/16"
-  ]
-  loki_vpc_endpoint_allowed_principals = var.loki_vpc_endpoint_allowed_principals
+  }
+}
+
+# Remote state do módulo observability em dev (Loki VPC Endpoint)
+data "terraform_remote_state" "observability_dev" {
+  backend = "s3"
+
+  config = {
+    bucket         = "r10score-terraform-state-dev"
+    key            = "observability/dev/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "r10score-terraform-state-dev-locks"
+    encrypt        = true
+  }
 }
 
 module "ecs_deploy" {
@@ -139,13 +54,13 @@ module "ecs_deploy" {
 
   region = var.region
 
-  vpc_id         = module.vpc.vpc_id
-  subnet_ids     = module.vpc.private_subnet_ids
+  vpc_id         = data.terraform_remote_state.network.outputs.vpc_id
+  subnet_ids     = data.terraform_remote_state.network.outputs.app_subnet_ids
   alb_sg_id      = var.create_alb ? null : var.alb_security_group_id
   allowed_sg_ids = var.allowed_security_group_ids
 
   create_alb                           = var.create_alb
-  alb_subnet_ids                       = var.create_alb ? module.vpc.public_subnet_ids : []
+  alb_subnet_ids                       = var.create_alb ? data.terraform_remote_state.network.outputs.public_subnet_ids : []
   alb_internal                         = var.alb_internal
   alb_allowed_cidr_blocks              = var.alb_allowed_cidr_blocks
   alb_enable_https                     = var.alb_enable_https
@@ -199,13 +114,13 @@ module "ecs_deploy" {
   s3_logs_expiration_days            = var.s3_logs_expiration_days
 
   enable_metrics       = true
-  amp_remote_write_url = module.observability.prometheus_remote_write_endpoint
-  amp_workspace_arn    = module.observability.prometheus_workspace_arn
+  amp_remote_write_url = data.terraform_remote_state.observability_prod.outputs.prometheus_remote_write_endpoint
+  amp_workspace_arn    = data.terraform_remote_state.observability_prod.outputs.prometheus_workspace_arn
 
   enable_loki            = var.enable_loki
-  loki_host              = var.enable_loki ? module.observability.loki_host : null
-  loki_port              = var.enable_loki ? module.observability.loki_port : null
-  loki_security_group_id = var.enable_loki ? module.observability.loki_task_security_group_id : null
+  loki_host              = var.enable_loki ? data.terraform_remote_state.observability_dev.outputs.loki_vpce_dns_name : null
+  loki_port              = var.enable_loki ? 3100 : null
+  loki_security_group_id = var.enable_loki ? data.terraform_remote_state.observability_dev.outputs.loki_vpce_security_group_id : null
 
   create_secret        = var.create_secret
   secret_name_override = var.secret_name_override
@@ -218,15 +133,15 @@ resource "aws_security_group_rule" "loki_ingress_from_ecs" {
   count = var.enable_loki ? 1 : 0
 
   type                     = "ingress"
-  from_port                = module.observability.loki_port
-  to_port                  = module.observability.loki_port
+  from_port                = 3100
+  to_port                  = 3100
   protocol                 = "tcp"
   source_security_group_id = module.ecs_deploy.ecs_sg_id
-  security_group_id        = module.observability.loki_task_security_group_id
-  description              = "Allow ECS Security Group to access Loki via NLB"
+  security_group_id        = data.terraform_remote_state.observability_dev.outputs.loki_vpce_security_group_id
+  description              = "Allow ECS Security Group to access Loki via VPC Endpoint (PrivateLink)"
 
   depends_on = [
-    module.observability,
+    data.terraform_remote_state.observability_dev,
     module.ecs_deploy
   ]
 

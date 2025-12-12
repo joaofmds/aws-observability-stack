@@ -6,9 +6,6 @@ resource "aws_security_group" "alb" {
 
   lifecycle {
     create_before_destroy = true
-    ignore_changes = [
-      vpc_id
-    ]
   }
 
   ingress {
@@ -71,12 +68,12 @@ resource "aws_lb" "this" {
     }
   }
 
+  depends_on = [
+    aws_security_group.alb
+  ]
+
   lifecycle {
     create_before_destroy = true
-    ignore_changes = [
-      security_groups,
-      subnets
-    ]
   }
 
   tags = merge(local.common_tags, {
